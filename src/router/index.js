@@ -12,6 +12,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/password-setup',
+    name: 'password-setup',
+    component: () => import('@/components/PasswordSetup.vue'),
+    meta: { requiresAuth: false, title: 'Setup Password' },
+  },
+  {
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardView,
@@ -21,7 +27,19 @@ const routes = [
         path: 'add-employee',
         name: 'add-employee',
         component: AddEmployee,
-        meta: { requiresAuth: true, roles: ['admin', 'branch admin'] }, // Protect route with both 'admin' and 'branch admin' roles
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] }, // Protect route with both 'admin' and 'branch admin' roles
+      },
+      {
+        path: '/dashboard/add-company',
+        name: 'AddCompany',
+        component: () => import('@/components/dashboard/Admin/AddCompany.vue'),
+        meta: { requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: '/dashboard/add-branch',
+        name: 'AddBranch',
+        component: () => import('@/components/dashboard/Admin/AddBranch.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin'] },
       },
       // Add other child routes here, e.g., AddArticle, ViewArticles
     ],
@@ -56,6 +74,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.roles && !to.meta.roles.includes(userRole)) {
     return next({ name: 'unauthorized' })
   }
+  document.title = to.meta.title || 'Installmantsof'
 
   next()
 })

@@ -11,6 +11,9 @@
       <div class="form-control">
         <input type="email" id="email" v-model="email" required placeholder="" />
         <label for="email" class="form-label">Email</label>
+        <small class="error-text" v-if="validationErrors.email">{{
+          validationErrors.email[0]
+        }}</small>
       </div>
       <div class="form-control">
         <input
@@ -23,7 +26,12 @@
         />
         <label for="password" class="form-label">Password</label>
       </div>
-      <button type="submit" :disabled="loginDisabled">Sign In</button>
+      <button type="submit" :disabled="loginDisabled">
+        <span v-if="loginDisabled">
+          <i class="fa fa-spinner fa-spin"></i>
+        </span>
+        <span v-else>Sign In</span>
+      </button>
 
       <div class="form-help">
         <div class="remember-me">
@@ -52,8 +60,7 @@ const ErrorPopupComponent = defineComponent(ErrorPopup)
 
 const email = ref('')
 const password = ref('')
-const emailError = ref('')
-const passwordError = ref('')
+const validationErrors = ref({})
 const router = useRouter()
 const store = useStore()
 
@@ -63,53 +70,36 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const loginDisabled = ref(false)
 
-const validateEmail = (email) => {
-  const re = /\S+@\S+\.\S+/
-  return re.test(email)
-}
-
 const submitForm = async () => {
-  emailError.value = ''
-  passwordError.value = ''
-  errorMessage.value = ''
-  showError.value = false
-
-  if (!validateEmail(email.value)) {
-    emailError.value = 'Please enter a valid email address.'
-    return
-  }
-
-  loginDisabled.value = true // Disable login button during request
-
   try {
-    // Call the Vuex action to perform the login
+    loginDisabled.value = true
+    validationErrors.value = {}
+    errorMessage.value = ''
+    showError.value = false
+
     const response = await store.dispatch('loginUser', {
       email: email.value,
       password: password.value,
     })
 
     if (response.success) {
-      successMessage.value = response.message || 'Login successful!'
+      successMessage.value = 'Login successful!'
       showSuccess.value = true
-
-      setTimeout(() => {
-        showSuccess.value = false
-        router.push('/dashboard') // Redirect to dashboard
-      }, 1000)
+      router.push('/dashboard')
     } else {
-      // Backend error message
-      errorMessage.value = response.data?.message || 'Invalid email or password.'
+      if (response.errors) {
+        // Handle validation errors
+        validationErrors.value = response.errors
+      }
+      // Show error message
+      errorMessage.value = response.message || 'Invalid email or password'
       showError.value = true
     }
-  } catch (error) {
-    // Handle unexpected errors
-    errorMessage.value = error.response?.data?.message || 'An unexpected error occurred.'
+  } catch {
+    errorMessage.value = 'An unexpected error occurred'
     showError.value = true
   } finally {
-    loginDisabled.value = false // Re-enable login button
-    setTimeout(() => {
-      showError.value = false
-    }, 5000) // Hide error popup after 5 seconds
+    loginDisabled.value = false
   }
 }
 </script>
@@ -233,5 +223,21 @@ form .form-help :where(label, a) {
   .form-wrapper form {
     margin: 25px 0 40px;
   }
+}
+.error-text {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: block;
+}
+.form-control {
+  margin-bottom: 20px;
+}
+.fa-spinner {
+  margin-right: 5px;
+}
+button:disabled {
+  background: #7e7e7e;
+  cursor: not-allowed;
 }
 </style>

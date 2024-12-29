@@ -1,7 +1,7 @@
 <template>
   <div :class="pageClass">
-    <!-- Navbar Section: Only show if route is not 'login', 'unauthorized', or 'not-found' -->
-    <div v-if="!['login', 'not-found'].includes(route.name)" class="navbar">
+    <!-- Navbar Section: Only show if route is not 'login', 'password-setup', 'unauthorized', or 'not-found' -->
+    <div v-if="!['login', 'password-setup', 'not-found'].includes(route.name)" class="navbar">
       <Navbar />
     </div>
 
@@ -20,7 +20,7 @@ import { computed } from 'vue'
 const route = useRoute() // Use route to check current route
 
 const pageClass = computed(() =>
-  route.name === 'login' ? 'login-background' : 'default-background',
+  ['login', 'password-setup'].includes(route.name) ? 'login-background' : 'default-background',
 )
 </script>
 
@@ -50,12 +50,6 @@ const pageClass = computed(() =>
 
 /* Default white background for other pages */
 .default-background .main-body {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  flex: 1;
 }
 </style>

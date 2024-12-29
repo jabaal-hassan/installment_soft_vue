@@ -1,5 +1,6 @@
 import { createStore } from 'vuex'
 import AuthApiServices from '@/services/AuthApiServices' // Ensure this path is correct
+import router from '@/router' // Add this import at the top
 
 export default createStore({
   state: {
@@ -8,9 +9,18 @@ export default createStore({
     loggedIn: false,
     isOpen: {
       employeeDropdown: false,
+      companyDropdown: false,
+      addCompanyDropdown: false,
+      addBranchDropdown: false,
+      viewCompanyDropdown: false,
+      viewBranchDropdown: false,
     },
     isLanguageModalOpen: false,
     logoutMessage: '',
+    registrationMessage: null,
+    passwordSetupStatus: null,
+    companies: [],
+    branches: [],
   },
   getters: {
     getUser: (state) => state.user,
@@ -25,6 +35,10 @@ export default createStore({
     isLoggedIn: (state) => state.loggedIn,
     getDropdownState: (state) => (dropdown) => state.isOpen[dropdown],
     getLanguageModalState: (state) => state.isLanguageModalOpen,
+    getRegistrationMessage: (state) => state.registrationMessage,
+    getPasswordSetupStatus: (state) => state.passwordSetupStatus,
+    getCompanies: (state) => state.companies,
+    getBranches: (state) => state.branches,
   },
   mutations: {
     setUser(state, userData) {
@@ -50,6 +64,18 @@ export default createStore({
     },
     setDropdownState(state, { dropdown, value }) {
       state.isOpen[dropdown] = value
+    },
+    setRegistrationMessage(state, message) {
+      state.registrationMessage = message
+    },
+    setPasswordSetupStatus(state, status) {
+      state.passwordSetupStatus = status
+    },
+    SET_COMPANIES(state, companies) {
+      state.companies = companies
+    },
+    SET_BRANCH(state, branch) {
+      state.branches = [...state.branches, branch]
     },
   },
   actions: {
@@ -114,17 +140,52 @@ export default createStore({
       }
     },
 
-    initializeStore({ commit }) {
+    async handleTokenExpiration({ dispatch }) {
+      await dispatch('logoutUser')
+      router.push('/login')
+    },
+
+    initializeStore({ commit, dispatch }) {
       const token = localStorage.getItem('access_token')
       const authUser = localStorage.getItem('authUser')
-      const loggedUser = JSON.parse(localStorage.getItem('logged_user'))
+      const loggedUserStr = localStorage.getItem('logged_user')
 
       if (token && authUser) {
-        commit('setUser', JSON.parse(authUser))
-        commit('setLoggedUser', loggedUser)
-        commit('setLoggedIn', true)
+        try {
+          // Parse the JWT token
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          const isExpired = payload.exp * 1000 < Date.now()
+
+          if (isExpired) {
+            // If token is expired, logout user
+            dispatch('handleTokenExpiration')
+          } else {
+            // If token is valid, restore user state
+            const parsedAuthUser = JSON.parse(authUser)
+            const loggedUser = loggedUserStr ? JSON.parse(loggedUserStr) : null
+
+            commit('setUser', parsedAuthUser)
+            commit('setLoggedUser', loggedUser)
+            commit('setLoggedIn', true)
+
+            // If user is not on login page, let them stay on current page
+            if (router.currentRoute.value.path === '/login') {
+              router.push('/') // or your default authenticated route
+            }
+          }
+        } catch (error) {
+          console.error('Error initializing store:', error)
+          dispatch('handleTokenExpiration')
+        }
       } else {
+        // No token or user data found
+        commit('clearUser')
         commit('setLoggedIn', false)
+
+        // Only redirect to login if on a protected route
+        if (router.currentRoute.value.path !== '/login') {
+          router.push('/login')
+        }
       }
     },
 
@@ -145,6 +206,225 @@ export default createStore({
 
     closeDropdown({ commit }, dropdown) {
       commit('setDropdownState', { dropdown, value: false })
+    },
+
+    async registerEmployee({ commit, getters }, employeeData) {
+      try {
+        const formData = new FormData()
+        const userRole = getters.getUserRole
+
+        // Add all employee data fields
+        Object.keys(employeeData).forEach((key) => {
+          // Only include company_id if user is admin
+          if (key === 'company_id' && userRole !== 'admin') {
+            return // Skip company_id for non-admin users
+          }
+
+          if (employeeData[key] !== null && employeeData[key] !== undefined) {
+            if (typeof employeeData[key] === 'object' && !(employeeData[key] instanceof File)) {
+              formData.append(key, JSON.stringify(employeeData[key]))
+            } else {
+              formData.append(key, employeeData[key])
+            }
+          }
+        })
+
+        // Debug log
+        console.log('User Role:', userRole)
+        console.log('Form Data:')
+        for (let pair of formData.entries()) {
+          console.log(pair[0] + ': ' + pair[1])
+        }
+
+        const config = {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+
+        const response = await AuthApiServices.PostRequest('/add-employee', formData, config)
+        console.log('API Response:', response)
+
+        if (response.message === 'User, Employee registered successfully') {
+          commit(
+            'setRegistrationMessage',
+            'Registration successful! Check email for password setup.',
+          )
+          return { success: true, data: response.data }
+        }
+
+        return {
+          success: false,
+          message: response.message || 'Registration failed',
+          errors: response.errors,
+        }
+      } catch (error) {
+        console.error('Registration error:', error.response?.data || error)
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Registration failed',
+          errors: error.response?.data?.errors,
+        }
+      }
+    },
+
+    async setupPassword(_, payload) {
+      try {
+        // Log the payload being sent
+        console.log('Sending password setup data:', {
+          email: payload.email,
+          token: payload.token,
+          password: payload.password,
+          password_confirmation: payload.password_confirmation,
+        })
+
+        const response = await AuthApiServices.PostRequest('/password-setup', {
+          email: payload.email,
+          token: payload.token,
+          password: payload.password,
+          password_confirmation: payload.password_confirmation,
+        })
+
+        // Log the response
+        console.log('Password setup response:', response)
+
+        if (response.errors || response.message) {
+          return {
+            success: false,
+            message: response.message,
+            errors: response.errors,
+          }
+        }
+
+        return {
+          success: true,
+          message: 'Password setup successful',
+        }
+      } catch (error) {
+        // Log the detailed error
+        console.error('Password setup error details:', {
+          error: error,
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.response?.headers,
+        })
+
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Password setup failed',
+          errors: error.response?.data?.errors,
+        }
+      }
+    },
+
+    async getAllCompanies({ commit }) {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-company')
+        console.log('API Response:', response) // Debug log
+
+        if (response.data && response.data.companies) {
+          commit('SET_COMPANIES', response.data.companies)
+          return { success: true, companies: response.data.companies }
+        }
+        return { success: false, message: 'No companies found' }
+      } catch (error) {
+        console.error('Error fetching companies:', error)
+        return { success: false, message: 'Failed to fetch companies' }
+      }
+    },
+
+    async registerCompany(_, formData) {
+      try {
+        const response = await AuthApiServices.PostRequest('/add-company', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+
+        if (response.message === 'Company created successfully,') {
+          return {
+            success: true,
+            message: response.message,
+            company: response.data.company,
+          }
+        }
+
+        return {
+          success: false,
+          message: response.message || 'Unexpected response format',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to add company',
+          errors: error.response?.data?.errors,
+        }
+      }
+    },
+
+    async registerBranch({ commit, getters }, branchData) {
+      try {
+        const userRole = getters.getUserRole
+        let dataToSend = { ...branchData }
+
+        if (userRole !== 'admin') {
+          delete dataToSend.company_id
+        }
+
+        const response = await AuthApiServices.PostRequest('/add-branch', dataToSend)
+
+        if (response.message === 'Branch created successfully') {
+          commit('SET_BRANCH', response.data.branch)
+          return {
+            success: true,
+            message: response.message,
+            branch: response.data.branch,
+          }
+        }
+
+        if (response.message === 'Validation failed') {
+          return {
+            success: false,
+            message: response.message,
+            errors: response.errors,
+          }
+        }
+
+        return {
+          success: false,
+          message: response.message || 'Unexpected response format',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to add branch',
+          errors: error.response?.data?.errors,
+        }
+      }
+    },
+
+    async getAllBranches() {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-branches')
+
+        if (response.message === 'Branches fetched successfully') {
+          return {
+            success: true,
+            branches: response.data.branches,
+          }
+        }
+
+        return {
+          success: false,
+          message: response.message || 'Failed to fetch branches',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to fetch branches',
+        }
+      }
     },
   },
 })
