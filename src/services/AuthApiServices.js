@@ -1,26 +1,52 @@
 import axios from 'axios'
 
 const baseURL = 'http://127.0.0.1:8000/api'
-// Updated to VITE_ prefix
 
 const AuthApiServices = {
-  // Initialize Axios
   init() {
     axios.defaults.baseURL = baseURL
-    axios.defaults.headers.common['Content-Type'] = 'application/json' // Set default headers to JSON
   },
 
-  // Fetch the access token from localStorage
-  getAuthHeaders() {
+  // Fetch the auth headers based on content type
+  getAuthHeaders(isMultipart = false) {
     const accessToken = localStorage.getItem('access_token')
     const headers = {
-      'Content-Type': 'application/json', // Set content type as JSON for non-file requests
-      'ngrok-skip-browser-warning': 'true', // Optional, only if you're using ngrok
+      // Set content type based on request type
+      'Content-Type': isMultipart ? 'multipart/form-data' : 'application/json',
+      'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     }
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}` // Attach the token if available
+      headers['Authorization'] = `Bearer ${accessToken}`
     }
     return headers
+  },
+
+  // Generic POST request
+  async PostRequest(endpoint, data, config = {}) {
+    try {
+      // Check if the data is FormData
+      const isMultipart = data instanceof FormData
+
+      const response = await axios.post(`${baseURL}${endpoint}`, data, {
+        ...config,
+        headers: {
+          ...this.getAuthHeaders(isMultipart),
+          ...config.headers,
+        },
+      })
+      return response.data
+    } catch (error) {
+      console.error('POST request error:', error.response?.data || error.message)
+      if (error.response?.status === 422) {
+        return {
+          success: false,
+          message: 'Validation failed',
+          errors: error.response.data.errors,
+        }
+      }
+      throw error
+    }
   },
 
   // Generic GET request
@@ -40,27 +66,6 @@ const AuthApiServices = {
       console.error('GET request failed:', error)
       if (error.response) {
         throw new Error(error.response.data.message || 'GET request failed')
-      }
-      throw error
-    }
-  },
-
-  // Generic POST request
-  async PostRequest(endpoint, data) {
-    try {
-      const headers = this.getAuthHeaders()
-      console.log(`Making POST request to: ${baseURL}${endpoint}`, { data, headers })
-
-      const response = await axios.post(`${baseURL}${endpoint}`, data, {
-        headers,
-      })
-
-      console.log('POST request successful:', response)
-      return response.data // Return the response data
-    } catch (error) {
-      console.error('POST request failed:', error)
-      if (error.response) {
-        throw new Error(error.response.data.message || 'POST request failed')
       }
       throw error
     }

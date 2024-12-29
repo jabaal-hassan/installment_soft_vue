@@ -31,7 +31,9 @@
             @mouseenter="openDropdown('employeeDropdown')"
             @mouseleave="closeDropdown('employeeDropdown')"
           >
-            <a class="nav-link" href="#" id="employeeDropdown" role="button"> Employee </a>
+            <a class="nav-link" href="#" id="employeeDropdown" role="button"
+              ><i class="fas fa-user me-2"></i> Employee
+            </a>
             <ul class="dropdown-menu" :class="{ show: isOpen.employeeDropdown }">
               <li
                 class="dropdown-submenu"
@@ -39,7 +41,7 @@
                 @mouseleave="closeDropdown('addEmployeeDropdown')"
               >
                 <router-link to="/dashboard/add-employee" class="dropdown-item">
-                  Add New Employee
+                  <i class="fas fa-user-plus me-2"></i> Add New Employee
                 </router-link>
               </li>
 
@@ -48,7 +50,64 @@
                 @mouseenter="openDropdown('viewEmployeeDropdown')"
                 @mouseleave="closeDropdown('viewEmployeeDropdown')"
               >
-                <a class="dropdown-item" href="#">View Employee</a>
+                <a class="dropdown-item" href="#">
+                  <i class="fas fa-users-viewfinder me-2"></i> View Employee
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li
+            v-if="isAdminOrCompanyAdmin"
+            class="nav-item dropdown"
+            @mouseenter="openDropdown('companyDropdown')"
+            @mouseleave="closeDropdown('companyDropdown')"
+          >
+            <a class="nav-link" href="#" id="companyDropdown" role="button">
+              <i class="fas fa-building me-2"></i> Company
+            </a>
+            <ul class="dropdown-menu" :class="{ show: isOpen.companyDropdown }">
+              <li
+                v-if="isAdmin"
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addCompanyDropdown')"
+                @mouseleave="closeDropdown('addCompanyDropdown')"
+              >
+                <router-link to="/dashboard/add-company" class="dropdown-item">
+                  <i class="fas fa-plus-circle me-2"></i> Add Company
+                </router-link>
+              </li>
+
+              <li
+                v-if="isAdminOrCompanyAdmin"
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addBranchDropdown')"
+                @mouseleave="closeDropdown('addBranchDropdown')"
+              >
+                <router-link to="/dashboard/add-branch" class="dropdown-item">
+                  <i class="fas fa-code-branch me-2"></i> Add Branch
+                </router-link>
+              </li>
+
+              <li
+                v-if="isAdmin"
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewCompanyDropdown')"
+                @mouseleave="closeDropdown('viewCompanyDropdown')"
+              >
+                <router-link to="/dashboard/view-companies" class="dropdown-item">
+                  <i class="fas fa-list me-2"></i> View Companies
+                </router-link>
+              </li>
+
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewBranchDropdown')"
+                @mouseleave="closeDropdown('viewBranchDropdown')"
+              >
+                <router-link to="/dashboard/view-branches" class="dropdown-item">
+                  <i class="fas fa-sitemap me-2"></i> View Branches
+                </router-link>
               </li>
             </ul>
           </li>
@@ -94,10 +153,8 @@ import { useRouter } from 'vue-router'
 export default {
   name: 'NavbarComponent',
   computed: {
-    // Use Vuex getters to check if user is logged in and get language modal state
     ...mapGetters(['getLanguageModalState']),
 
-    // Check if the user is logged in and if their role is admin or branch admin
     isLoggedIn() {
       return this.$store.getters.isLoggedIn
     },
@@ -108,8 +165,17 @@ export default {
 
     isAdminOrBranchAdmin() {
       const role = this.$store.getters.getUserRole
-      console.log('User role:', role) // Add this line to check the role
-      return role === 'admin' || role === 'branch admin' // Adjust as per your roles
+      return role === 'admin' || role === 'company admin' || role === 'branch admin'
+    },
+
+    isAdmin() {
+      const role = this.$store.getters.getUserRole
+      return role === 'admin'
+    },
+
+    isAdminOrCompanyAdmin() {
+      const role = this.$store.getters.getUserRole
+      return role === 'admin' || role === 'company admin'
     },
   },
   setup() {

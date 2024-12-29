@@ -15,7 +15,11 @@ const userRole = computed(() => store.getters.getUserRole)
 
 // Check if the user is admin or branch-admin
 const isAdminOrBranchAdmin = computed(() => {
-  return userRole.value === 'admin' || userRole.value === 'branch admin'
+  return (
+    userRole.value === 'company admin' ||
+    userRole.value === 'branch admin' ||
+    userRole.value === 'admin'
+  )
 })
 </script>
 
