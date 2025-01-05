@@ -47,6 +47,12 @@ const routes = [
         component: () => import('@/components/dashboard/Admin/AddInventory.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
       },
+      {
+        path: '/dashboard/view-inventory',
+        name: 'ViewInventory',
+        component: () => import('@/components/dashboard/Admin/InventoryView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
       // Add other child routes here, e.g., AddArticle, ViewArticles
     ],
   },

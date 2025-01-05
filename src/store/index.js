@@ -512,5 +512,21 @@ export default createStore({
         }
       }
     },
+
+    async getAllInventory() {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-inventory')
+        return {
+          success: true,
+          data: response.data,
+          message: response.message,
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to fetch inventory',
+        }
+      }
+    },
   },
 })

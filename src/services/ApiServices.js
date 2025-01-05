@@ -2,8 +2,7 @@ import Vue from 'vue'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 
-const baseURL = 'http://127.0.0.1:8000/api';
-
+const baseURL = 'http://192.168.10.4:8000/api'
 
 const ApiServices = {
   init() {
