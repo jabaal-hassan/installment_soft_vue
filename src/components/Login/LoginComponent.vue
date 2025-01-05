@@ -41,7 +41,10 @@
         <a href="#">Need help?</a>
       </div>
     </form>
-    <p>If you've forgotten your password, <a href="#">click here to reset it</a></p>
+    <p>
+      If you've forgotten your password,
+      <a href="#" @click.prevent="sendPasswordResetLink">click here to reset it</a>
+    </p>
     <small>
       This page is protected by Jabaal Hassan.
       <a href="#">Learn more.</a>
@@ -70,6 +73,15 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const loginDisabled = ref(false)
 
+const clearMessages = () => {
+  setTimeout(() => {
+    showSuccess.value = false
+    showError.value = false
+    successMessage.value = ''
+    errorMessage.value = ''
+  }, 10000) // 10 seconds
+}
+
 const submitForm = async () => {
   try {
     loginDisabled.value = true
@@ -95,11 +107,31 @@ const submitForm = async () => {
       errorMessage.value = response.message || 'Invalid email or password'
       showError.value = true
     }
+    clearMessages()
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || 'An unexpected error occurred'
+    showError.value = true
+    clearMessages()
+  } finally {
+    loginDisabled.value = false
+  }
+}
+
+const sendPasswordResetLink = async () => {
+  try {
+    const response = await store.dispatch('sendPasswordResetLink', { email: email.value })
+    if (response.success) {
+      successMessage.value = 'Password reset link sent successfully! Check your email'
+      showSuccess.value = true
+    } else {
+      errorMessage.value = response.message || 'Failed to send password reset link'
+      showError.value = true
+    }
+    clearMessages()
   } catch {
     errorMessage.value = 'An unexpected error occurred'
     showError.value = true
-  } finally {
-    loginDisabled.value = false
+    clearMessages()
   }
 }
 </script>
@@ -114,6 +146,11 @@ const submitForm = async () => {
   width: 450px;
   transform: translate(-50%, -50%);
   background: rgba(0, 0, 0, 0.75);
+}
+.form-wrapper:hover {
+  box-shadow:
+    4px 8px 30px 2px rgba(55, 55, 55, 0.5),
+    -4px -8px 30px 2px rgba(55, 55, 55, 0.5);
 }
 .form-wrapper h2 {
   color: #fff;

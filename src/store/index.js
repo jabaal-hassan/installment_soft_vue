@@ -14,6 +14,9 @@ export default createStore({
       addBranchDropdown: false,
       viewCompanyDropdown: false,
       viewBranchDropdown: false,
+      inventoryDropdown: false,
+      addInventoryDropdown: false,
+      viewInventoryDropdown: false,
     },
     isLanguageModalOpen: false,
     logoutMessage: '',
@@ -103,11 +106,21 @@ export default createStore({
 
           return { success: true, message: 'Login successful!' }
         } else {
-          return { success: false, message: 'Unexpected response format' }
+          return { success: false, message: 'Invalid email or password' }
         }
       } catch (error) {
         console.error('Error during login:', error)
-        return { success: false, message: 'An error occurred. Please try again later.' }
+        if (error.response?.data?.message === 'Validation failed') {
+          return {
+            success: false,
+            message: 'Invalid email or password',
+            errors: error.response.data.errors,
+          }
+        }
+        return {
+          success: false,
+          message: error.response?.data?.message || 'An error occurred. Please try again later.',
+        }
       }
     },
 
@@ -271,14 +284,6 @@ export default createStore({
 
     async setupPassword(_, payload) {
       try {
-        // Log the payload being sent
-        console.log('Sending password setup data:', {
-          email: payload.email,
-          token: payload.token,
-          password: payload.password,
-          password_confirmation: payload.password_confirmation,
-        })
-
         const response = await AuthApiServices.PostRequest('/password-setup', {
           email: payload.email,
           token: payload.token,
@@ -286,30 +291,21 @@ export default createStore({
           password_confirmation: payload.password_confirmation,
         })
 
-        // Log the response
-        console.log('Password setup response:', response)
-
-        if (response.errors || response.message) {
+        // Check for successful response
+        if (response.message === 'Password setup successful') {
           return {
-            success: false,
-            message: response.message,
-            errors: response.errors,
+            success: true,
+            message: 'Password setup successful',
           }
         }
 
+        // Handle error cases
         return {
-          success: true,
-          message: 'Password setup successful',
+          success: false,
+          message: response.message || 'Password setup failed',
+          errors: response.errors,
         }
       } catch (error) {
-        // Log the detailed error
-        console.error('Password setup error details:', {
-          error: error,
-          response: error.response?.data,
-          status: error.response?.status,
-          headers: error.response?.headers,
-        })
-
         return {
           success: false,
           message: error.response?.data?.message || 'Password setup failed',
@@ -423,6 +419,96 @@ export default createStore({
         return {
           success: false,
           message: error.response?.data?.message || 'Failed to fetch branches',
+        }
+      }
+    },
+
+    async sendPasswordResetLink(_, payload) {
+      try {
+        const response = await AuthApiServices.PostRequest('/send-password-reset-link', payload)
+        if (response.message === 'Password reset link sent') {
+          return { success: true, message: response.message }
+        }
+        return { success: false, message: response.message || 'Failed to send password reset link' }
+      } catch (error) {
+        return { success: false, message: error.response?.data?.message || 'An error occurred' }
+      }
+    },
+
+    async getAllCategories() {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-categories')
+        if (response.message === 'Categories retrieved successfully') {
+          return {
+            success: true,
+            categories: response.data.Categories,
+          }
+        }
+        return {
+          success: false,
+          message: 'Failed to fetch categories',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Error fetching categories',
+        }
+      }
+    },
+
+    async getAllBrands() {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-brands')
+        if (response.message === 'Brands retrieved successfully') {
+          return {
+            success: true,
+            brands: response.data.Brands,
+          }
+        }
+        return {
+          success: false,
+          message: 'Failed to fetch brands',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Error fetching brands',
+        }
+      }
+    },
+
+    async addInventory(_, payload) {
+      try {
+        const response = await AuthApiServices.PostRequest('/store-inventory', {
+          item_name: payload.item_name,
+          branch_id: payload.branch_id,
+          category_id: payload.category_id,
+          brand_id: payload.brand_id,
+          model: payload.model,
+          serial_number: payload.serial_number,
+          color: payload.color || null,
+          description: payload.description || null,
+          quantity: payload.quantity || 1,
+          price: payload.price,
+        })
+
+        if (response.message === 'Inventory item stored successfully') {
+          return {
+            success: true,
+            message: 'Inventory item added successfully',
+            inventory: response.data.Inventory,
+          }
+        }
+
+        return {
+          success: false,
+          message: response.message || 'Failed to add inventory item',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Error adding inventory item',
+          errors: error.response?.data?.errors,
         }
       }
     },
