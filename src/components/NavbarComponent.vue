@@ -64,7 +64,7 @@
             @mouseleave="closeDropdown('companyDropdown')"
           >
             <a class="nav-link" href="#" id="companyDropdown" role="button">
-              <i class="fas fa-building me-2"></i> Company
+              <i class="fas fa-building me-2"></i><span v-if="isAdmin"> Company & </span>Branch
             </a>
             <ul class="dropdown-menu" :class="{ show: isOpen.companyDropdown }">
               <li
@@ -107,6 +107,38 @@
               >
                 <router-link to="/dashboard/view-branches" class="dropdown-item">
                   <i class="fas fa-sitemap me-2"></i> View Branches
+                </router-link>
+              </li>
+            </ul>
+          </li>
+
+          <li
+            class="nav-item dropdown"
+            v-if="isAdminOrBranchAdmin"
+            @mouseenter="openDropdown('inventoryDropdown')"
+            @mouseleave="closeDropdown('inventoryDropdown')"
+          >
+            <a class="nav-link" href="#" id="inventoryDropdown" role="button">
+              <i class="fas fa-box me-2"></i> Inventory
+            </a>
+            <ul class="dropdown-menu" :class="{ show: isOpen.inventoryDropdown }">
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addInventoryDropdown')"
+                @mouseleave="closeDropdown('addInventoryDropdown')"
+              >
+                <router-link to="/dashboard/add-inventory" class="dropdown-item">
+                  <i class="fas fa-plus-circle me-2"></i> Add Inventory
+                </router-link>
+              </li>
+
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewInventoryDropdown')"
+                @mouseleave="closeDropdown('viewInventoryDropdown')"
+              >
+                <router-link to="/dashboard/view-inventory" class="dropdown-item">
+                  <i class="fas fa-list me-2"></i> View Inventory
                 </router-link>
               </li>
             </ul>

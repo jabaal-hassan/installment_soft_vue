@@ -41,6 +41,12 @@ const routes = [
         component: () => import('@/components/dashboard/Admin/AddBranch.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin'] },
       },
+      {
+        path: '/dashboard/add-inventory',
+        name: 'AddInventory',
+        component: () => import('@/components/dashboard/Admin/AddInventory.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
       // Add other child routes here, e.g., AddArticle, ViewArticles
     ],
   },

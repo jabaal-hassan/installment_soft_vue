@@ -19,6 +19,7 @@
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
+    "html5-qrcode": "^2.3.8",
     "katex": "^0.16.18",
     "process": "^0.11.10",
     "vue": "^3.5.13",
