@@ -14,9 +14,6 @@ export default createStore({
       addBranchDropdown: false,
       viewCompanyDropdown: false,
       viewBranchDropdown: false,
-      inventoryDropdown: false,
-      addInventoryDropdown: false,
-      viewInventoryDropdown: false,
     },
     isLanguageModalOpen: false,
     logoutMessage: '',
@@ -24,6 +21,7 @@ export default createStore({
     passwordSetupStatus: null,
     companies: [],
     branches: [],
+    employees: [], // Add this new state property
   },
   getters: {
     getUser: (state) => state.user,
@@ -42,6 +40,7 @@ export default createStore({
     getPasswordSetupStatus: (state) => state.passwordSetupStatus,
     getCompanies: (state) => state.companies,
     getBranches: (state) => state.branches,
+    getEmployees: (state) => state.employees,
   },
   mutations: {
     setUser(state, userData) {
@@ -79,6 +78,9 @@ export default createStore({
     },
     SET_BRANCH(state, branch) {
       state.branches = [...state.branches, branch]
+    },
+    SET_EMPLOYEES(state, employees) {
+      state.employees = employees
     },
   },
   actions: {
@@ -284,6 +286,14 @@ export default createStore({
 
     async setupPassword(_, payload) {
       try {
+        // Log the payload being sent
+        console.log('Sending password setup data:', {
+          email: payload.email,
+          token: payload.token,
+          password: payload.password,
+          password_confirmation: payload.password_confirmation,
+        })
+
         const response = await AuthApiServices.PostRequest('/password-setup', {
           email: payload.email,
           token: payload.token,
@@ -291,24 +301,62 @@ export default createStore({
           password_confirmation: payload.password_confirmation,
         })
 
-        // Check for successful response
-        if (response.message === 'Password setup successful') {
+        // Log the response
+        console.log('Password setup response:', response)
+
+        if (response.errors || response.message) {
           return {
-            success: true,
-            message: 'Password setup successful',
+            success: false,
+            message: response.message,
+            errors: response.errors,
           }
         }
 
-        // Handle error cases
+        return {
+          success: true,
+          message: 'Password setup successful',
+        }
+      } catch (error) {
+        // Log the detailed error
+        console.error('Password setup error details:', {
+          error: error,
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.response?.headers,
+        })
+
         return {
           success: false,
-          message: response.message || 'Password setup failed',
-          errors: response.errors,
+          message: error.response?.data?.message || 'Password setup failed',
+          errors: error.response?.data?.errors,
+        }
+      }
+    },
+
+    async resetPassword(_, payload) {
+      try {
+        const response = await AuthApiServices.PostRequest('/password-reset', {
+          email: payload.email,
+          password: payload.password,
+          password_confirmation: payload.password_confirmation,
+        })
+
+        if (response.errors || response.message) {
+          return {
+            success: false,
+            message: response.message,
+            errors: response.errors,
+          }
+        }
+
+        return {
+          success: true,
+          message: 'Password reset successful',
         }
       } catch (error) {
         return {
           success: false,
-          message: error.response?.data?.message || 'Password setup failed',
+          message: error.response?.data?.message || 'Password reset failed',
           errors: error.response?.data?.errors,
         }
       }
@@ -434,7 +482,6 @@ export default createStore({
         return { success: false, message: error.response?.data?.message || 'An error occurred' }
       }
     },
-
     async getAllCategories() {
       try {
         const response = await AuthApiServices.GetRequest('/get-all-categories')
@@ -509,6 +556,69 @@ export default createStore({
           success: false,
           message: error.response?.data?.message || 'Error adding inventory item',
           errors: error.response?.data?.errors,
+        }
+      }
+    },
+
+    async getAllInventory() {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-inventory')
+        return {
+          success: true,
+          data: response.data,
+          message: response.message,
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to fetch inventory',
+        }
+      }
+    },
+
+    async updateInventory(_, { id, data }) {
+      try {
+        const response = await AuthApiServices.PutRequest(`/update-inventory/${id}`, data)
+        return {
+          success: true,
+          data: response.data,
+          message: response.message,
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to update inventory',
+        }
+      }
+    },
+
+    async deleteInventory(_, id) {
+      try {
+        const response = await AuthApiServices.DeleteRequest(`/delete-inventory/${id}`)
+        return {
+          success: true,
+          message: response.message,
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to delete inventory',
+        }
+      }
+    },
+    async getAllEmployees({ commit }) {
+      try {
+        const response = await AuthApiServices.GetRequest('/get-all-employees')
+        if (response.message === 'Employees fetched successfully') {
+          commit('SET_EMPLOYEES', response.data)
+          return { success: true, employees: response.data }
+        }
+        return { success: false, message: 'Failed to fetch employees' }
+      } catch (error) {
+        console.error('Error fetching employees:', error)
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to fetch employees',
         }
       }
     },

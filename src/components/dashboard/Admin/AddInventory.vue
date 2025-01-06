@@ -177,16 +177,15 @@
               <label for="model" class="form-label">Model</label>
             </div>
 
-            <div class="inputs position-relative w-48">
+            <div class="mb-3 inputs position-relative w-48">
+              <label class="form-label category-label">Serial Number</label>
               <input
                 type="text"
-                id="serial_number"
                 v-model="formData.serial_number"
                 class="form-control border-0"
-                required
-                placeholder=" "
+                placeholder="Leave empty for auto-generated serial number"
+                id="serial_number"
               />
-              <label for="serial_number" class="form-label">Serial Number</label>
             </div>
           </div>
           <div class="mb-3 inputs position-relative">
@@ -544,24 +543,116 @@ export default {
 
     const onScanSuccess = async (decodedText) => {
       try {
-        // Stop scanner after successful scan
         await stopScanner()
+        console.log('Scanned text:', decodedText)
 
-        // Parse the scanned data
-        const scannedData = JSON.parse(decodedText)
+        // Parse labeled data
+        const scannedData = {}
+        const pairs = decodedText.split(',').map((item) => item.trim())
 
-        // Update form data with scanned values
-        formData.value = {
-          ...formData.value,
-          ...scannedData,
+        pairs.forEach((pair) => {
+          const [label, value] = pair.split(':').map((item) => item.trim())
+          switch (label.toLowerCase()) {
+            case 'name':
+              scannedData.item_name = value
+              break
+            case 'category':
+              scannedData.category = value
+              break
+            case 'brand':
+              scannedData.brand = value
+              break
+            case 'model':
+              scannedData.model = value
+              break
+            case 'serial':
+              scannedData.serial_number = value
+              break
+            case 'price':
+              scannedData.price = parseFloat(value) || 0
+              break
+            case 'color':
+              scannedData.color = value
+              break
+            case 'quantity':
+              scannedData.quantity = parseInt(value) || 1
+              break
+            case 'description':
+              scannedData.description = value
+              break
+          }
+        })
+
+        console.log('Processed data:', scannedData)
+
+        // Get Others category if category not provided
+        const othersCategory = categories.value.find((c) => c.name === 'Others')
+        let categoryId = othersCategory?.id
+
+        // If category is provided, try to find it
+        if (scannedData.category) {
+          const category = categories.value.find(
+            (c) => c.name.toLowerCase() === scannedData.category.toLowerCase(),
+          )
+          if (category) {
+            categoryId = category.id
+          }
         }
 
-        showSuccess.value = true
-        successMessage.value = 'Data scanned successfully!'
+        // Get Others brand for the selected category
+        let brandId = null
+        if (categoryId) {
+          const categoryBrands = brands.value.filter((b) => b.category_id === categoryId)
+          const othersBrand = categoryBrands.find((b) => b.name === 'Others')
+          brandId = othersBrand?.id // Default to Others
+
+          // If brand is provided, try to find it in the category
+          if (scannedData.brand) {
+            const brand = categoryBrands.find(
+              (b) => b.name.toLowerCase() === scannedData.brand.toLowerCase(),
+            )
+            if (brand) {
+              brandId = brand.id
+            }
+          }
+        }
+
+        // Prepare data for backend
+        const inventoryData = {
+          item_name: scannedData.item_name,
+          category_id: categoryId,
+          brand_id: brandId,
+          model: scannedData.model,
+          serial_number: scannedData.serial_number,
+          price: scannedData.price,
+          color: scannedData.color || null,
+          quantity: scannedData.quantity || 1,
+          description: scannedData.description || null,
+          branch_id: store.getters.getLoggedUser?.branch_id || formData.value.branch_id,
+        }
+
+        console.log('Saving data:', inventoryData)
+
+        // Validate required fields
+        if (!inventoryData.item_name || !inventoryData.price) {
+          showError.value = true
+          errorMessage.value = 'Item name and price are required'
+          return
+        }
+
+        // Save to backend
+        const result = await store.dispatch('addInventory', inventoryData)
+        if (result.success) {
+          showSuccess.value = true
+          successMessage.value = 'Inventory added successfully!'
+        } else {
+          showError.value = true
+          errorMessage.value = result.message || 'Failed to add inventory'
+        }
       } catch (err) {
-        console.error('QR/Barcode scan error:', err)
+        console.error('Scan error:', err)
         showError.value = true
-        errorMessage.value = 'Invalid QR/Barcode format'
+        errorMessage.value = 'Error processing scanned data. Please try again.'
       }
     }
 

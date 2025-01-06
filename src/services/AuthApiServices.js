@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = 'http://127.0.0.1:8000/api'
+const baseURL = 'http://192.168.10.6:8000/api'
 
 const AuthApiServices = {
   init() {
@@ -13,7 +13,7 @@ const AuthApiServices = {
     const headers = {
       // Set content type based on request type
       'Content-Type': isMultipart ? 'multipart/form-data' : 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'ngrok-skip-browser-warning': 'true',
     }
     if (accessToken) {
