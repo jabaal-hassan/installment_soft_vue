@@ -53,6 +53,15 @@ const routes = [
         component: () => import('@/components/dashboard/Admin/InventoryView.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
       },
+      {
+        path: '/dashboard/view-employees',
+        name: 'ViewEmployees',
+        component: () => import('@/components/dashboard/Admin/EmployeeView.vue'),
+        meta: {
+          requiresAuth: true,
+          allowedRoles: ['admin', 'company admin', 'branch admin'],
+        },
+      },
       // Add other child routes here, e.g., AddArticle, ViewArticles
     ],
   },

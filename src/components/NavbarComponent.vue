@@ -50,9 +50,9 @@
                 @mouseenter="openDropdown('viewEmployeeDropdown')"
                 @mouseleave="closeDropdown('viewEmployeeDropdown')"
               >
-                <a class="dropdown-item" href="#">
+                <router-link to="/dashboard/view-employees" class="dropdown-item">
                   <i class="fas fa-users-viewfinder me-2"></i> View Employee
-                </a>
+                </router-link>
               </li>
             </ul>
           </li>
@@ -145,32 +145,20 @@
           </li>
         </ul>
 
-        <form class="d-flex me-4 w-50 position-relative">
-          <div class="input-group">
-            <input
-              class="form-control rounded-5 ps-5 border"
-              type="search"
-              placeholder="Search for anything"
-              aria-label="Search"
-            />
-            <span
-              class="input-group-text position-absolute"
-              style="
-                left: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                background-color: transparent;
-                border: none;
-              "
-            >
-              <span class="material-icons"></span>
-            </span>
-          </div>
-        </form>
-
-        <ul class="navbar-nav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <button @click="goToSearch" class="btn btn-outline-primary search-btn">
+              <i class="fas fa-search"></i>
+              <span class="ms-2">Search</span>
+            </button>
+          </li>
           <li class="nav-item ms-3">
-            <button @click="logout" class="btn btn-outline-danger btn-sm ms-2">Logout</button>
+            <button @click="logout" class="btn btn-outline-danger btn-sm" :disabled="isLoggingOut">
+              <span v-if="isLoggingOut" class="spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+              </span>
+              <span v-else>Logout</span>
+            </button>
           </li>
         </ul>
       </div>
@@ -180,8 +168,9 @@
 
 <script>
 import { mapActions, mapGetters, useStore } from 'vuex'
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 export default {
   name: 'NavbarComponent',
   computed: {
@@ -217,17 +206,19 @@ export default {
     const errorMessage = ref('')
     const showSuccessPopup = ref(false)
     const showErrorPopup = ref(false)
+    const isLoggingOut = ref(false)
+    const searchQuery = ref('')
+    const searchResults = ref([])
+    const showResults = ref(false)
+    const searchTimeout = ref(null)
 
     const logout = async () => {
+      isLoggingOut.value = true
       try {
         const response = await store.dispatch('logoutUser')
-        console.log('Logout response:', response)
-
         if (response.success) {
           successMessage.value = response.message || 'Logout successful! Redirecting to login...'
           showSuccessPopup.value = true
-
-          // Immediately redirect to login page without delay
           router.push('/login')
         } else {
           errorMessage.value = response.message || 'Logout failed. Please try again.'
@@ -237,7 +228,91 @@ export default {
         console.error('Error during logout:', error)
         errorMessage.value = error.message || 'An error occurred. Please try again.'
         showErrorPopup.value = true
+      } finally {
+        isLoggingOut.value = false
       }
+    }
+
+    const handleSearchInput = () => {
+      if (searchTimeout.value) clearTimeout(searchTimeout.value)
+
+      if (searchQuery.value.length > 2) {
+        searchTimeout.value = setTimeout(() => {
+          performSearch()
+        }, 300)
+      } else {
+        searchResults.value = []
+        showResults.value = false
+      }
+    }
+
+    const performSearch = async () => {
+      // Search in employees
+      const employeeResults = store.state.employees
+        .filter(
+          (emp) =>
+            emp.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            emp.email.toLowerCase().includes(searchQuery.value.toLowerCase()),
+        )
+        .map((emp) => ({
+          ...emp,
+          type: 'Employee',
+        }))
+
+      // Search in inventory
+      const inventoryResults = store.state.inventory
+        .filter(
+          (item) =>
+            item.product_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            item.category_name.toLowerCase().includes(searchQuery.value.toLowerCase()),
+        )
+        .map((item) => ({
+          ...item,
+          type: 'Inventory',
+        }))
+
+      searchResults.value = [...employeeResults, ...inventoryResults].slice(0, 5)
+      showResults.value = true
+    }
+
+    const navigateToResult = (result) => {
+      searchQuery.value = ''
+      showResults.value = false
+
+      if (result.type === 'Employee') {
+        router.push({
+          name: 'EmployeeView',
+          query: { highlight: result.id },
+        })
+      } else {
+        router.push({
+          name: 'InventoryView',
+          query: { highlight: result.id },
+        })
+      }
+    }
+
+    const getResultIcon = (type) => {
+      return type === 'Employee' ? 'fas fa-user' : 'fas fa-box'
+    }
+
+    // Close results when clicking outside
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.search-input')) {
+        showResults.value = false
+      }
+    }
+
+    onMounted(() => {
+      document.addEventListener('click', handleClickOutside)
+    })
+
+    onUnmounted(() => {
+      document.removeEventListener('click', handleClickOutside)
+    })
+
+    const goToSearch = () => {
+      router.push({ name: 'SearchResults' })
     }
 
     return {
@@ -246,6 +321,15 @@ export default {
       showSuccessPopup,
       showErrorPopup,
       logout,
+      isLoggingOut,
+      searchQuery,
+      searchResults,
+      showResults,
+      handleSearchInput,
+      performSearch,
+      navigateToResult,
+      getResultIcon,
+      goToSearch,
     }
   },
   methods: {
@@ -271,13 +355,22 @@ export default {
 
 <style scoped>
 .navbar {
-  box-shadow: 0 5px 2px -2px rgba(57, 57, 57, 0.2);
-  background-color: white;
-  width: 100vw;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  width: 100%;
+  padding: 0.8rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .logo {
   width: 5em;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .logo-mobile {
@@ -285,33 +378,277 @@ export default {
 }
 
 .nav-link {
-  font-size: 90%;
-  color: rgb(28, 28, 28);
+  font-size: 0.95rem;
+  color: #2c3e50;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link:hover {
+  background: rgba(65, 88, 208, 0.05);
+  color: #4158d0;
 }
 
 .navbar-nav .dropdown-menu {
-  display: none;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 0.5rem;
+  min-width: 200px;
+}
+
+.dropdown-item {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(65, 88, 208, 0.05);
+  color: #4158d0;
+}
+
+.search-input {
+  width: 100% !important;
+  height: 45px;
+  padding-left: 1.5rem !important;
+  font-size: 0.95rem;
+  border-radius: 25px !important;
+}
+
+.search-input:focus {
+  background: white;
+  box-shadow: 0 0 0 4px rgba(65, 88, 208, 0.1);
+  border-color: #4158d0;
+}
+
+.btn-outline-danger {
+  border-radius: 20px;
+  padding: 0.5rem 1.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Responsive Styles */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin-top: 1rem;
+  }
+
+  form.d-flex {
+    width: 100% !important;
+    margin: 1rem 0 !important;
+  }
+
+  .input-group {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100% !important;
+    height: 45px;
+    font-size: 0.95rem;
+    padding-left: 1.5rem !important;
+  }
+
+  .input-group-text {
+    left: 15px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .logo-mobile {
+    width: 3.5em;
+  }
+
+  .search-input {
+    font-size: 0.9rem;
+  }
+
+  .btn-outline-danger {
+    padding: 0.4rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .navbar {
+    padding: 0.5rem;
+  }
+
+  .logo-mobile {
+    width: 3em;
+  }
+
+  .navbar-brand {
+    margin-right: 0;
+  }
+
+  .search-input {
+    font-size: 0.85rem;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+  }
+
+  .dropdown-item {
+    font-size: 0.9rem;
+  }
+}
+
+/* Animation for dropdown */
+.dropdown-menu {
+  transform-origin: top;
+  animation: dropdownFade 0.2s ease;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.fa-spinner {
+  font-size: 0.9rem;
+  color: #dc3545;
+}
+
+.search-results {
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: 999;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-top: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
-.navbar-nav .dropdown-menu.show {
-  display: block;
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.navbar-nav .dropdown-menu.wide-dropdown {
-  width: 250px;
+.search-result-item:hover {
+  background: rgba(65, 88, 208, 0.05);
 }
 
-.navbar-nav .dropdown-submenu {
+.search-result-item i {
+  color: #4158d0;
+  width: 20px;
+  text-align: center;
+}
+
+.result-info {
+  flex: 1;
+}
+
+.result-title {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.result-type {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+/* Responsive styles */
+@media (max-width: 991.98px) {
+  .search-results {
+    position: fixed;
+    top: auto;
+    left: 10px;
+    right: 10px;
+    margin-top: 10px;
+  }
+}
+
+form.d-flex {
   position: relative;
+  width: 40%;
+  margin: 0 auto;
 }
 
-.navbar-nav .dropdown-submenu .dropdown-menu {
-  top: 0;
-  left: 100%;
-  margin-left: 0;
+.input-group {
+  width: 100%;
+}
+
+.search-input {
+  width: 100% !important;
+  height: 45px;
+  padding-left: 1.5rem !important;
+  font-size: 0.95rem;
+  border-radius: 25px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  form.d-flex {
+    width: 100%;
+    margin: 1rem 0;
+  }
+}
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  background: transparent;
+  border: 2px solid #4158d0;
+  color: #4158d0;
+}
+
+.search-btn:hover {
+  background: #4158d0;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(65, 88, 208, 0.15);
+}
+
+@media (max-width: 768px) {
+  .search-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .search-btn span {
+    display: none;
+  }
 }
 </style>

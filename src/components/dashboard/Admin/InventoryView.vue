@@ -1,42 +1,54 @@
 <template>
   <div class="inventory-view">
     <!-- Header Section -->
-    <div class="header-section mb-4">
-      <div class="d-flex justify-content-between align-items-center">
-        <h2 class="section-title">{{ selectedCategoryName }} Inventory</h2>
-        <div class="header-actions">
-          <button class="btn btn-outline-primary me-2" @click="printInventory">
-            <i class="fas fa-print me-1"></i> Print
-          </button>
-          <router-link to="/dashboard/add-inventory" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Add New
-          </router-link>
+    <div class="header-section">
+      <div class="header-container">
+        <!-- Title and Actions -->
+        <div class="title-bar">
+          <div class="title-wrapper">
+            <i class="fas fa-cube title-icon"></i>
+            <h2 class="section-title">{{ selectedCategoryName }} Inventory</h2>
+          </div>
+          <div class="header-actions">
+            <button class="action-button print" @click="printInventory">
+              <i class="fas fa-print"></i>
+              <span>Print</span>
+              <div class="button-glow"></div>
+            </button>
+            <router-link to="/dashboard/add-inventory" class="action-button add">
+              <i class="fas fa-plus"></i>
+              <span>Add New</span>
+              <div class="button-glow"></div>
+            </router-link>
+          </div>
         </div>
-      </div>
 
-      <!-- Search and Category Filter -->
-      <div class="search-filters mt-3">
-        <div class="row g-3">
-          <div class="col-md-4">
+        <!-- Search and Filters -->
+        <div class="search-filter-container">
+          <!-- Search Box -->
+          <div class="search-wrapper">
             <div class="search-box">
               <i class="fas fa-search search-icon"></i>
               <input
                 type="text"
                 @input="handleSearch"
                 :value="searchQuery"
-                class="form-control search-input"
+                class="search-input"
                 placeholder="Search by name, category, brand, model, or serial number..."
               />
             </div>
           </div>
-          <div class="col-md-8">
+
+          <!-- Category Filter -->
+          <div class="category-wrapper">
             <div class="category-buttons">
               <button
                 class="category-btn"
                 :class="{ active: selectedCategory === 'all' }"
                 @click="handleCategoryChange('all')"
               >
-                All Items
+                <i class="fas fa-border-all"></i>
+                <span>All Items</span>
               </button>
               <button
                 v-for="category in displayCategories"
@@ -45,7 +57,8 @@
                 :class="{ active: selectedCategory === category.id.toString() }"
                 @click="handleCategoryChange(category.id.toString())"
               >
-                {{ category.name }}
+                <i class="fas fa-tag"></i>
+                <span>{{ category.name }}</span>
               </button>
             </div>
           </div>
@@ -67,69 +80,97 @@
 
     <!-- Inventory List -->
     <div v-if="!loading && !error" class="inventory-list">
-      <!-- Table Header -->
       <div class="inventory-table">
+        <!-- Table Header -->
         <div class="table-header">
-          <div class="col-name">Item Name</div>
-          <div class="col-branch">Branch</div>
-          <div class="col-category">Category</div>
-          <div class="col-brand">Brand</div>
-          <div class="col-model">Model</div>
-          <div class="col-serial">Serial Number</div>
-          <div class="col-price">Price</div>
-          <div class="col-qty">Qty</div>
-          <div class="col-actions">Actions</div>
+          <div class="header-cell">Product Details</div>
+          <div class="header-cell">Location</div>
+          <div class="header-cell">Specifications</div>
+          <div class="header-cell">Stock Info</div>
+          <div class="header-cell">Actions</div>
         </div>
 
         <!-- Table Body -->
         <div class="table-body">
-          <div v-for="item in paginatedInventory" :key="item.id" class="table-row">
-            <div class="col-name">
-              <span class="item-name">{{ item.item_name }}</span>
-            </div>
-            <div class="col-branch">
-              <span class="truncate-text" :title="getBranchName(item.branch_id)">
-                {{ getBranchName(item.branch_id) }}
-              </span>
-            </div>
-            <div class="col-category">{{ getCategoryName(item.category_id) }}</div>
-            <div class="col-brand">{{ getBrandName(item.brand_id) }}</div>
-            <div class="col-model">{{ item.model }}</div>
-            <div class="col-serial">{{ item.serial_number }}</div>
-            <div class="col-price">Rs. {{ item.price }}</div>
-            <div class="col-qty">
-              <span class="badge" :class="item.quantity > 0 ? 'bg-success' : 'bg-danger'">
-                {{ item.quantity }}
-              </span>
-            </div>
-            <div class="col-actions">
-              <div class="dropdown">
-                <button class="btn btn-link" data-bs-toggle="dropdown">
-                  <i class="fas fa-ellipsis-v"></i>
-                </button>
-                <ul class="dropdown-menu">
-                  <li>
-                    <a class="dropdown-item" href="#" @click.prevent="openEditModal(item)">
-                      <i class="fas fa-edit me-2"></i>Edit
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="#" @click.prevent="openQRModal(item)">
-                      <i class="fas fa-qrcode me-2"></i>View QR
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <a
-                      class="dropdown-item text-danger"
-                      href="#"
-                      @click.prevent="handleDelete(item)"
-                    >
-                      <i class="fas fa-trash me-2"></i>Delete
-                    </a>
-                  </li>
-                </ul>
+          <div
+            v-for="item in paginatedInventory"
+            :key="item.id"
+            class="table-row"
+            :data-category="getCategoryName(item.category_id).toLowerCase()"
+          >
+            <!-- Product Details -->
+            <div class="product-cell">
+              <div class="product-icon">
+                <i class="fas fa-box-open"></i>
               </div>
+              <div class="product-info">
+                <h4 class="product-name">{{ item.item_name }}</h4>
+                <span class="product-category">{{ getCategoryName(item.category_id) }}</span>
+              </div>
+            </div>
+
+            <!-- Location Info -->
+            <div class="location-cell">
+              <div class="location-tag">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ getBranchName(item.branch_id) }}
+              </div>
+            </div>
+
+            <!-- Specifications -->
+            <div class="specs-cell">
+              <div class="spec-item">
+                <span class="spec-label">Brand:</span>
+                <span class="spec-value">{{ getBrandName(item.brand_id) }}</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-label">Model:</span>
+                <span class="spec-value">{{ item.model }}</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-label">Serial:</span>
+                <span class="spec-value mono">{{ item.serial_number }}</span>
+              </div>
+            </div>
+
+            <!-- Stock Info -->
+            <div class="stock-cell">
+              <div class="price-tag">
+                <i class="fas fa-tag"></i>
+                Rs. {{ item.price }}
+              </div>
+              <div class="stock-badge" :class="getQuantityClass(item.quantity)">
+                <i class="fas fa-cubes"></i>
+                {{ item.quantity }} units
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-cell">
+              <button
+                class="action-btn edit"
+                @click.prevent="openEditModal(item)"
+                type="button"
+                title="Edit"
+              >
+                <i class="fas fa-edit"></i>
+              </button>
+              <button
+                class="action-btn view"
+                @click.prevent="openQRModal(item)"
+                type="button"
+                title="QR Code"
+              >
+                <i class="fas fa-qrcode"></i>
+              </button>
+              <button
+                class="action-btn delete"
+                @click.prevent="handleDelete(item)"
+                type="button"
+                title="Delete"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -486,9 +527,14 @@ onMounted(() => {
 })
 
 // Methods
-const openEditModal = (item) => {
+const openEditModal = async (item) => {
+  console.log('Edit button clicked', item) // Debug log
   selectedItem.value = { ...item }
-  editModal.show()
+  if (editModal) {
+    editModal.show()
+  } else {
+    console.error('Edit modal not initialized')
+  }
 }
 
 const handleItemUpdated = async () => {
@@ -496,25 +542,38 @@ const handleItemUpdated = async () => {
 }
 
 // Open QR modal
-const openQRModal = (item) => {
+const openQRModal = async (item) => {
+  console.log('QR button clicked', item) // Debug log
   selectedItem.value = item
-  qrModal.show()
+  if (qrModal) {
+    qrModal.show()
+  } else {
+    console.error('QR modal not initialized')
+  }
 }
 
-// Add delete function
+// Enhanced delete function with debugging
 const handleDelete = async (item) => {
-  if (confirm('Are you sure you want to delete this item?')) {
-    try {
+  console.log('Delete button clicked', item) // Debug log
+
+  try {
+    const willDelete = confirm('Are you sure you want to delete this item?')
+    console.log('Confirm response:', willDelete) // Debug log
+
+    if (willDelete) {
+      console.log('Attempting to delete item:', item.id) // Debug log
       const response = await store.dispatch('deleteInventory', item.id)
+      console.log('Delete response:', response) // Debug log
+
       if (response.success) {
-        await fetchInventory() // Refresh the list
+        await fetchInventory()
       } else {
         alert(response.message || 'Failed to delete item')
       }
-    } catch (error) {
-      console.error('Delete error:', error)
-      alert('Failed to delete item')
     }
+  } catch (error) {
+    console.error('Delete error:', error)
+    alert('Failed to delete item')
   }
 }
 
@@ -522,6 +581,12 @@ onMounted(() => {
   fetchInventory()
   fetchAllData()
 })
+
+const getQuantityClass = (quantity) => {
+  if (quantity > 10) return 'in-stock'
+  if (quantity > 0) return 'low-stock'
+  return 'out-of-stock'
+}
 </script>
 
 <style scoped>
@@ -560,94 +625,269 @@ onMounted(() => {
   box-shadow: 0 0 0 0.2rem rgba(135, 16, 216, 0.25);
 }
 
+.inventory-list {
+  padding: 20px;
+}
+
 .inventory-table {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 0.5fr 0.5fr;
-  padding: 15px;
+  grid-template-columns: 2fr 1fr 2fr 1.5fr 0.8fr;
+  padding: 20px;
   background: #f8f9fa;
-  border-bottom: 2px solid #eee;
-  font-weight: 600;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.header-cell {
   color: #495057;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 0.5fr 0.5fr;
-  padding: 15px;
+  grid-template-columns: 2fr 1fr 2fr 1.5fr 0.8fr;
+  padding: 20px;
   align-items: center;
-  border-bottom: 1px solid #eee;
-  transition: background-color 0.2s;
+  border-bottom: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+  position: relative;
+  margin-bottom: 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .table-row:hover {
-  background-color: #f8f2ff;
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
-.col-name,
-.col-branch,
-.col-category,
-.col-brand,
-.col-model,
-.col-serial,
-.col-price,
-.col-qty,
-.col-actions {
-  padding: 0 10px;
+/* Default rainbow border for all items */
+.table-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(45deg, #4158d0, #c850c0, #ffcc70, #4158d0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  background-size: 300% 300%;
+  animation: borderAnimation 4s ease infinite;
 }
 
-.item-name {
-  font-weight: 500;
-  color: #2c3e50;
+.table-row:hover::before {
+  animation: borderAnimation 2s ease infinite;
 }
 
-.col-price {
-  font-weight: 500;
-  color: #8710d8;
+/* Different colors for admin/employee */
+.table-row[data-role='admin']::before {
+  background: linear-gradient(45deg, #28a745, #20c997, #28a745);
 }
 
-.col-qty .badge {
+.table-row[data-role='employee']::before {
+  background: linear-gradient(45deg, #17a2b8, #4158d0, #17a2b8);
+}
+
+@keyframes borderAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Product Cell */
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.product-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #4158d0, #c850c0);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
+}
+
+.product-category {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Location Cell */
+.location-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #e9ecef;
+  border-radius: 20px;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+/* Specifications Cell */
+.specs-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spec-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spec-label {
+  color: #6c757d;
+  font-size: 0.85rem;
+  min-width: 60px;
+}
+
+.spec-value {
+  color: #212529;
+  font-size: 0.9rem;
+}
+
+.spec-value.mono {
+  font-family: monospace;
+  color: #495057;
+}
+
+/* Stock Cell */
+.stock-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.stock-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 6px 12px;
   border-radius: 20px;
+  font-size: 0.85rem;
 }
 
-.col-actions {
-  text-align: center;
+.stock-badge.in-stock {
+  background: #d4edda;
+  color: #155724;
 }
 
-.btn-link {
-  color: #6c757d;
-  padding: 5px;
+.stock-badge.low-stock {
+  background: #fff3cd;
+  color: #856404;
 }
 
-.btn-link:hover {
-  color: #8710d8;
+.stock-badge.out-of-stock {
+  background: #f8d7da;
+  color: #721c24;
 }
 
-.btn-outline-secondary {
-  border-color: #e9ecef;
+/* Actions Cell */
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
-.btn-outline-secondary:hover,
-.btn-outline-secondary.active {
-  background-color: #8710d8;
-  border-color: #8710d8;
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
   color: white;
 }
 
-.pagination .page-link {
-  color: #8710d8;
+.action-btn.edit {
+  background: #4158d0;
+  cursor: pointer;
+  z-index: 10;
 }
 
-.pagination .active .page-link {
-  background-color: #8710d8;
-  border-color: #8710d8;
+.action-btn.edit:active {
+  transform: scale(0.95);
+}
+
+.action-btn.view {
+  background: #c850c0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.action-btn.view:active {
+  transform: scale(0.95);
+}
+
+.action-btn.delete {
+  background: #ff4d4d;
+  cursor: pointer;
+  z-index: 10; /* Ensure button is clickable */
+}
+
+.action-btn.delete:active {
+  transform: scale(0.95); /* Visual feedback */
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
 }
 
 .showing-entries {
@@ -706,5 +946,352 @@ onMounted(() => {
 /* Optional: Add tooltip on hover */
 .truncate-text:hover {
   cursor: pointer;
+}
+
+.header-section {
+  background: linear-gradient(135deg, #1a1c2d, #2c2f44);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title-icon {
+  font-size: 24px;
+  color: #4158d0;
+  background: rgba(65, 88, 208, 0.1);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.section-title {
+  color: white;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.print {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.add {
+  background: linear-gradient(135deg, #4158d0, #c850c0);
+  color: white;
+}
+
+.button-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.action-button:hover .button-glow {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.search-filter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center align items */
+  gap: 24px; /* Increased gap */
+  margin-top: 20px;
+}
+
+.search-wrapper {
+  width: 90%; /* Increased width */
+  max-width: 506px; /* Maximum width */
+  margin: 0 auto; /* Center the search box */
+}
+
+.search-box {
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 14px 14px 48px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(65, 88, 208, 0.3);
+}
+
+.category-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center; /* Center the categories */
+  overflow-x: auto;
+  padding: 4px;
+}
+
+.category-buttons {
+  display: inline-flex; /* Changed to inline-flex */
+  justify-content: center; /* Center the buttons */
+  gap: 12px;
+  padding: 4px;
+  flex-wrap: wrap; /* Allow wrapping */
+}
+
+.category-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px; /* Increased padding */
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem; /* Slightly larger font */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+/* Enhanced hover and active states */
+.category-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.category-btn.active {
+  background: linear-gradient(135deg, #4158d0, #c850c0);
+  color: white;
+  box-shadow: 0 4px 15px rgba(65, 88, 208, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-wrapper {
+    width: 90%;
+  }
+
+  .category-buttons {
+    justify-content: flex-start; /* Left align on mobile */
+    padding: 4px 0;
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 1.5fr 1fr 1.5fr 1.2fr 0.8fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .header-container {
+    padding: 15px;
+  }
+
+  .title-bar {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .search-filter-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .search-wrapper {
+    width: 100%;
+  }
+
+  .category-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .category-buttons {
+    padding-bottom: 5px;
+    min-width: max-content;
+  }
+}
+
+@media (max-width: 768px) {
+  .inventory-view {
+    padding: 10px;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .header-cell {
+    display: none;
+  }
+
+  .table-row {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .product-cell,
+  .location-cell,
+  .specs-cell,
+  .stock-cell,
+  .actions-cell {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .product-cell {
+    border-bottom: none;
+  }
+
+  .actions-cell {
+    justify-content: flex-start;
+    border-bottom: none;
+  }
+
+  .showing-entries {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .pagination {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .action-button {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+
+  .search-input {
+    font-size: 0.9rem;
+  }
+
+  .category-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .product-info h4 {
+    font-size: 0.9rem;
+  }
+
+  .product-category {
+    font-size: 0.8rem;
+  }
+
+  .spec-item {
+    font-size: 0.8rem;
+  }
+
+  .stock-badge {
+    font-size: 0.8rem;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .inventory-view {
+    padding: 0;
+  }
+
+  .header-section,
+  .search-filter-container,
+  .pagination,
+  .card-actions {
+    display: none;
+  }
+
+  .table-header,
+  .table-row {
+    page-break-inside: avoid;
+  }
 }
 </style>
