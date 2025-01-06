@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = 'http://192.168.10.4:8000/api'
+const baseURL = 'http://192.168.10.6:8000/api'
 
 const AuthApiServices = {
   init() {

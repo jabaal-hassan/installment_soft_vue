@@ -8,9 +8,6 @@
           <button class="btn btn-outline-primary me-2" @click="printInventory">
             <i class="fas fa-print me-1"></i> Print
           </button>
-          <button class="btn btn-outline-primary me-2">
-            <i class="fas fa-filter me-1"></i> Filter
-          </button>
           <router-link to="/dashboard/add-inventory" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i> Add New
           </router-link>
@@ -74,6 +71,7 @@
       <div class="inventory-table">
         <div class="table-header">
           <div class="col-name">Item Name</div>
+          <div class="col-branch">Branch</div>
           <div class="col-category">Category</div>
           <div class="col-brand">Brand</div>
           <div class="col-model">Model</div>
@@ -88,6 +86,11 @@
           <div v-for="item in paginatedInventory" :key="item.id" class="table-row">
             <div class="col-name">
               <span class="item-name">{{ item.item_name }}</span>
+            </div>
+            <div class="col-branch">
+              <span class="truncate-text" :title="getBranchName(item.branch_id)">
+                {{ getBranchName(item.branch_id) }}
+              </span>
             </div>
             <div class="col-category">{{ getCategoryName(item.category_id) }}</div>
             <div class="col-brand">{{ getBrandName(item.brand_id) }}</div>
@@ -106,16 +109,24 @@
                 </button>
                 <ul class="dropdown-menu">
                   <li>
-                    <a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a>
+                    <a class="dropdown-item" href="#" @click.prevent="openEditModal(item)">
+                      <i class="fas fa-edit me-2"></i>Edit
+                    </a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="#"><i class="fas fa-qrcode me-2"></i>View QR</a>
+                    <a class="dropdown-item" href="#" @click.prevent="openQRModal(item)">
+                      <i class="fas fa-qrcode me-2"></i>View QR
+                    </a>
                   </li>
                   <li><hr class="dropdown-divider" /></li>
                   <li>
-                    <a class="dropdown-item text-danger" href="#"
-                      ><i class="fas fa-trash me-2"></i>Delete</a
+                    <a
+                      class="dropdown-item text-danger"
+                      href="#"
+                      @click.prevent="handleDelete(item)"
                     >
+                      <i class="fas fa-trash me-2"></i>Delete
+                    </a>
                   </li>
                 </ul>
               </div>
@@ -169,16 +180,32 @@
       <p class="text-muted">No items found matching your search criteria</p>
     </div>
   </div>
+
+  <!-- Add modal component -->
+  <EditInventoryModal
+    :item="selectedItem"
+    :categories="categories"
+    :brands="brands"
+    :branches="branches"
+    @updated="handleItemUpdated"
+  />
+
+  <!-- Add QR Modal -->
+  <ViewQRModal :item="selectedItem" :categories="categories" :brands="brands" />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import EditInventoryModal from './EditInventoryModal.vue'
+import { Modal } from 'bootstrap'
+import ViewQRModal from './ViewQRModal.vue'
 
 const store = useStore()
 const inventory = ref([])
 const categories = ref([])
 const brands = ref([])
+const branches = ref([])
 const loading = ref(true)
 const error = ref(null)
 const searchQuery = ref('')
@@ -201,13 +228,15 @@ const displayCategories = computed(() => {
 
 // Fetch all data
 const fetchAllData = async () => {
-  const [categoriesRes, brandsRes] = await Promise.all([
+  const [categoriesRes, brandsRes, branchesRes] = await Promise.all([
     store.dispatch('getAllCategories'),
     store.dispatch('getAllBrands'),
+    store.dispatch('getAllBranches'),
   ])
 
   if (categoriesRes.success) categories.value = categoriesRes.categories
   if (brandsRes.success) brands.value = brandsRes.brands
+  if (branchesRes.success) branches.value = branchesRes.branches
 }
 
 // Helper functions to get names
@@ -219,6 +248,11 @@ const getCategoryName = (categoryId) => {
 const getBrandName = (brandId) => {
   const brand = brands.value.find((b) => b.id === brandId)
   return brand ? brand.name : 'N/A'
+}
+
+const getBranchName = (branchId) => {
+  const branch = branches.value.find((b) => b.id === branchId)
+  return branch ? branch.name : 'N/A'
 }
 
 // Enhanced filtered inventory with proper type handling
@@ -370,6 +404,7 @@ const printInventory = () => {
             <tr>
               <th>#</th>
               <th>Item Name</th>
+              <th>Branch</th>
               <th>Category</th>
               <th>Brand</th>
               <th>Model</th>
@@ -385,6 +420,7 @@ const printInventory = () => {
               <tr>
                 <td>${index + 1}</td>
                 <td>${item.item_name}</td>
+                <td>${getBranchName(item.branch_id)}</td>
                 <td>${getCategoryName(item.category_id)}</td>
                 <td>${getBrandName(item.brand_id)}</td>
                 <td>${item.model}</td>
@@ -438,6 +474,50 @@ const handleSearch = (event) => {
   )
 }
 
+// Add refs
+const selectedItem = ref(null)
+let editModal = null
+let qrModal = null
+
+// Initialize modal
+onMounted(() => {
+  editModal = new Modal(document.getElementById('editInventoryModal'))
+  qrModal = new Modal(document.getElementById('viewQRModal'))
+})
+
+// Methods
+const openEditModal = (item) => {
+  selectedItem.value = { ...item }
+  editModal.show()
+}
+
+const handleItemUpdated = async () => {
+  await fetchInventory() // Refresh the list
+}
+
+// Open QR modal
+const openQRModal = (item) => {
+  selectedItem.value = item
+  qrModal.show()
+}
+
+// Add delete function
+const handleDelete = async (item) => {
+  if (confirm('Are you sure you want to delete this item?')) {
+    try {
+      const response = await store.dispatch('deleteInventory', item.id)
+      if (response.success) {
+        await fetchInventory() // Refresh the list
+      } else {
+        alert(response.message || 'Failed to delete item')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('Failed to delete item')
+    }
+  }
+}
+
 onMounted(() => {
   fetchInventory()
   fetchAllData()
@@ -489,7 +569,7 @@ onMounted(() => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 0.5fr 0.5fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 0.5fr 0.5fr;
   padding: 15px;
   background: #f8f9fa;
   border-bottom: 2px solid #eee;
@@ -499,7 +579,7 @@ onMounted(() => {
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 0.5fr 0.5fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 0.5fr 0.5fr;
   padding: 15px;
   align-items: center;
   border-bottom: 1px solid #eee;
@@ -511,6 +591,7 @@ onMounted(() => {
 }
 
 .col-name,
+.col-branch,
 .col-category,
 .col-brand,
 .col-model,
@@ -612,5 +693,18 @@ onMounted(() => {
 
 .no-results i {
   color: #dee2e6;
+}
+
+.truncate-text {
+  display: block;
+  max-width: 120px; /* Adjust this value as needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Optional: Add tooltip on hover */
+.truncate-text:hover {
+  cursor: pointer;
 }
 </style>

@@ -528,5 +528,36 @@ export default createStore({
         }
       }
     },
+
+    async updateInventory(_, { id, data }) {
+      try {
+        const response = await AuthApiServices.PutRequest(`/update-inventory/${id}`, data)
+        return {
+          success: true,
+          data: response.data,
+          message: response.message,
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to update inventory',
+        }
+      }
+    },
+
+    async deleteInventory(_, id) {
+      try {
+        const response = await AuthApiServices.DeleteRequest(`/delete-inventory/${id}`)
+        return {
+          success: true,
+          message: response.message,
+        }
+      } catch (error) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Failed to delete inventory',
+        }
+      }
+    },
   },
 })
