@@ -62,7 +62,12 @@ const routes = [
           allowedRoles: ['admin', 'company admin', 'branch admin'],
         },
       },
-      // Add other child routes here, e.g., AddArticle, ViewArticles
+      {
+        path: '/dashboard/add-installment-plan',
+        name: 'AddInstallmentPlan',
+        component: () => import('@/components/dashboard/Admin/AddInstallmentPlan.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
     ],
   },
   {
