@@ -1,11 +1,11 @@
 import AuthApiServices from '@/services/AuthApiServices'
 
 const state = {
-  // Define state properties if needed
+  installmentPlans: [],
 }
 
 const getters = {
-  // Define getters if needed
+  allInstallmentPlans: (state) => state.installmentPlans,
 }
 
 const actions = {
@@ -46,10 +46,35 @@ const actions = {
       }
     }
   },
+
+  async getAllInstallmentPlans({ commit }) {
+    try {
+      const response = await AuthApiServices.GetRequest('/get-all-installment-plans')
+      if (response.message === 'Installment plans retrieved successfully') {
+        commit('setInstallmentPlans', response.data.installmentPlans)
+        return {
+          success: true,
+          message: 'Installment plans retrieved successfully',
+          plans: response.data.installmentPlans,
+        }
+      }
+      return {
+        success: false,
+        message: response.message || 'Failed to retrieve installment plans',
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error retrieving installment plans',
+      }
+    }
+  },
 }
 
 const mutations = {
-  // Define mutations if needed
+  setInstallmentPlans(state, plans) {
+    state.installmentPlans = plans
+  },
 }
 
 export default {

@@ -29,6 +29,7 @@ export default createStore({
     companies: [],
     branches: [],
     employees: [], // Add this new state property
+    companyLogo: '', // Add this new state property
   },
   getters: {
     getUser: (state) => state.user,
@@ -48,6 +49,7 @@ export default createStore({
     getCompanies: (state) => state.companies,
     getBranches: (state) => state.branches,
     getEmployees: (state) => state.employees,
+    getUserCompanyLogo: (state) => state.companyLogo, // Add this new getter
   },
   mutations: {
     setUser(state, userData) {
@@ -83,11 +85,17 @@ export default createStore({
     SET_COMPANIES(state, companies) {
       state.companies = companies
     },
+    SET_SINGLE_COMPANY(state, company) {
+      state.companies = [company]
+    },
     SET_BRANCH(state, branch) {
       state.branches = [...state.branches, branch]
     },
     SET_EMPLOYEES(state, employees) {
       state.employees = employees
+    },
+    setUserCompanyLogo(state, logo) {
+      state.companyLogo = logo
     },
   },
   actions: {
@@ -372,7 +380,6 @@ export default createStore({
     async getAllCompanies({ commit }) {
       try {
         const response = await AuthApiServices.GetRequest('/get-all-company')
-        console.log('API Response:', response) // Debug log
 
         if (response.data && response.data.companies) {
           commit('SET_COMPANIES', response.data.companies)
@@ -382,6 +389,21 @@ export default createStore({
       } catch (error) {
         console.error('Error fetching companies:', error)
         return { success: false, message: 'Failed to fetch companies' }
+      }
+    },
+    async getSingleCompany({ commit }) {
+      try {
+        const response = await AuthApiServices.GetRequest(`/get-company`)
+
+        if (response.data && response.data.company) {
+          commit('SET_COMPANIES', [response.data.company]) // Or commit a separate mutation for single company if needed
+          commit('setUserCompanyLogo', response.data.company.logo) // Add this line to commit the logo
+          return { success: true, company: response.data.company }
+        }
+        return { success: false, message: 'Company not found' }
+      } catch (error) {
+        console.error('Error fetching single company:', error)
+        return { success: false, message: 'Failed to fetch company' }
       }
     },
 

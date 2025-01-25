@@ -13,14 +13,16 @@
         </button>
 
         <a class="navbar-brand mx-auto" href="#">
-          <img class="logo-mobile" src="../assets/udemy-logo.png" alt="logo" />
+          <img class="logo" :src="companyLogo" alt="company logo" />
         </a>
       </div>
 
       <!-- Desktop Logo (Left side) -->
       <a class="navbar-brand d-none d-lg-block" href="#">
-        <img class="logo" src="../assets/udemy-logo.png" alt="logo" />
-      </a>
+    <!-- Use dynamic binding for the logo image -->
+    <img class="logo" :src="companyLogo" alt="company logo" />
+  </a>
+
 
       <!-- Desktop & Tablet View - Navbar Links -->
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -195,13 +197,13 @@
 
 <script>
 import { mapActions, mapGetters, useStore } from 'vuex'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 export default {
   name: 'NavbarComponent',
   computed: {
-    ...mapGetters(['getLanguageModalState']),
+    ...mapGetters(['getLanguageModalState', 'getUserCompanyLogo']),
 
     isLoggedIn() {
       return this.$store.getters.isLoggedIn
@@ -225,6 +227,10 @@ export default {
       const role = this.$store.getters.getUserRole
       return role === 'admin' || role === 'company admin'
     },
+
+    companyLogo() {
+      return this.$store.getters.getUserCompanyLogo
+    }
   },
   setup() {
     const store = useStore()
@@ -256,7 +262,15 @@ export default {
       }
     }
 
-    // Remove onMounted and onUnmounted hooks as they're no longer needed
+    onMounted(() => {
+      store.dispatch('getSingleCompany').then(response => {
+        if (response && response.data && response.data.company) {
+          store.commit('setUserCompanyLogo', response.data.company.logo);
+        }
+      }).catch(error => {
+        console.error('Error fetching company data:', error);
+      });
+    })
 
     return {
       successMessage,
