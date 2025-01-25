@@ -28,38 +28,71 @@
 
         <!-- Installment Plan Add Form -->
         <form @submit.prevent="submitForm">
-          <!-- Plan Name -->
+          <!-- Plan Modal -->
           <div class="mb-3 inputs position-relative">
-            <input
-              type="text"
-              id="plan_name"
-              v-model="formData.plan_name"
+            <select
+              id="plan_modal"
+              v-model="formData.plan_modal"
               class="form-control border-0"
               required
-              placeholder=" "
-              :class="{ error: validationErrors.plan_name }"
-            />
-            <label for="plan_name" class="form-label">Plan Name</label>
-            <span v-if="validationErrors.plan_name" class="error-message">
-              {{ validationErrors.plan_name[0] }}
-            </span>
+            >
+              <option value="" disabled selected>Select Plan Modal</option>
+              <option value="monthly">Monthly Base</option>
+              <option value="weekly">Weekly Base</option>
+              <option value="daily">Daily Base</option>
+            </select>
+            <label for="plan_modal" class="form-label">Plan Modal</label>
           </div>
 
-          <!-- Product Name -->
-          <div class="mb-3 inputs position-relative">
-            <input
-              type="text"
-              id="product_name"
-              v-model="formData.product_name"
-              class="form-control border-0"
-              required
-              placeholder=" "
-              :class="{ error: validationErrors.product_name }"
-            />
-            <label for="product_name" class="form-label">Product Name</label>
-            <span v-if="validationErrors.product_name" class="error-message">
-              {{ validationErrors.product_name[0] }}
-            </span>
+          <!-- Plan Name -->
+          <div class="mb-3 d-flex justify-content-between">
+            <div class="inputs position-relative w-48">
+              <input
+                type="text"
+                id="plan_name"
+                v-model="formData.plan_name"
+                class="form-control border-0"
+                required
+                placeholder=" "
+                :class="{ error: validationErrors.plan_name }"
+              />
+              <label for="plan_name" class="form-label">Plan Name</label>
+              <span v-if="validationErrors.plan_name" class="error-message">
+                {{ validationErrors.plan_name[0] }}
+              </span>
+            </div>
+
+            <!-- Product Name -->
+
+            <!-- Product Selection with Search -->
+            <div class="inputs position-relative w-48">
+              <label class="form-label category-label">Product</label>
+              <div class="search-select-container">
+                <input
+                  type="text"
+                  v-model="productSearch"
+                  class="form-control search-input border-0"
+                  placeholder="Search Product..."
+                  @focus="showProductDropdown = true"
+                />
+                <div v-if="showProductDropdown" class="custom-dropdown">
+                  <template v-if="filteredProducts.length > 0">
+                    <div
+                      v-for="product in filteredProducts"
+                      :key="product.id"
+                      class="dropdown-item"
+                      @click="selectProduct(product)"
+                    >
+                      {{ product.item_name }}
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="dropdown-item no-results">No products found</div>
+                  </template>
+                </div>
+                <input type="hidden" v-model="formData.product_id" required />
+              </div>
+            </div>
           </div>
 
           <!-- Product Model -->
@@ -80,39 +113,40 @@
           </div>
 
           <!-- Product Price -->
-          <div class="mb-3 inputs position-relative">
-            <input
-              type="number"
-              id="product_price"
-              v-model="formData.product_price"
-              class="form-control border-0"
-              required
-              placeholder=" "
-              :class="{ error: validationErrors.product_price }"
-            />
-            <label for="product_price" class="form-label">Product Price</label>
-            <span v-if="validationErrors.product_price" class="error-message">
-              {{ validationErrors.product_price[0] }}
-            </span>
-          </div>
+          <div class="mb-3 d-flex justify-content-between">
+            <div class="inputs position-relative w-48">
+              <input
+                type="number"
+                id="product_price"
+                v-model="formData.product_price"
+                class="form-control border-0"
+                required
+                placeholder=" "
+                :class="{ error: validationErrors.product_price }"
+              />
+              <label for="product_price" class="form-label">Product Price</label>
+              <span v-if="validationErrors.product_price" class="error-message">
+                {{ validationErrors.product_price[0] }}
+              </span>
+            </div>
 
-          <!-- Advance -->
-          <div class="mb-3 inputs position-relative">
-            <input
-              type="number"
-              id="advance"
-              v-model="formData.advance"
-              class="form-control border-0"
-              required
-              placeholder=" "
-              :class="{ error: validationErrors.advance }"
-            />
-            <label for="advance" class="form-label">Advance</label>
-            <span v-if="validationErrors.advance" class="error-message">
-              {{ validationErrors.advance[0] }}
-            </span>
+            <!-- Advance -->
+            <div class="inputs position-relative w-48">
+              <input
+                type="number"
+                id="advance"
+                v-model="formData.advance"
+                class="form-control border-0"
+                required
+                placeholder=" "
+                :class="{ error: validationErrors.advance }"
+              />
+              <label for="advance" class="form-label">Advance</label>
+              <span v-if="validationErrors.advance" class="error-message">
+                {{ validationErrors.advance[0] }}
+              </span>
+            </div>
           </div>
-
           <!-- Total Price -->
           <div class="mb-3 inputs position-relative">
             <input
@@ -131,53 +165,56 @@
           </div>
 
           <!-- Remaining Amount -->
-          <div class="mb-3 inputs position-relative">
-            <input
-              type="number"
-              id="remaining_amount"
-              v-model="formData.remaining_amount"
-              class="form-control border-0"
-              required
-              placeholder=" "
-              :class="{ error: validationErrors.remaining_amount }"
-            />
-            <label for="remaining_amount" class="form-label">Remaining Amount</label>
-            <span v-if="validationErrors.remaining_amount" class="error-message">
-              {{ validationErrors.remaining_amount[0] }}
-            </span>
-          </div>
+          <div class="mb-3 d-flex justify-content-between">
+            <div class="inputs position-relative w-48">
+              <input
+                type="number"
+                id="remaining_amount"
+                v-model="remainingAmount"
+                class="form-control border-0"
+                required
+                placeholder=" "
+                :class="{ error: validationErrors.remaining_amount }"
+                readonly
+              />
+              <label for="remaining_amount" class="form-label">Remaining Amount</label>
+              <span v-if="validationErrors.remaining_amount" class="error-message">
+                {{ validationErrors.remaining_amount[0] }}
+              </span>
+            </div>
 
-          <!-- Installment Price -->
-          <div class="mb-3 inputs position-relative">
-            <input
-              type="number"
-              id="installment_price"
-              v-model="formData.installment_price"
-              class="form-control border-0"
-              required
-              placeholder=" "
-              :class="{ error: validationErrors.installment_price }"
-            />
-            <label for="installment_price" class="form-label">Installment Price</label>
-            <span v-if="validationErrors.installment_price" class="error-message">
-              {{ validationErrors.installment_price[0] }}
-            </span>
+            <!-- Installment Price -->
+            <div class="inputs position-relative w-48">
+              <input
+                type="number"
+                id="installment_price"
+                v-model="formData.installment_price"
+                class="form-control border-0"
+                required
+                placeholder=" "
+                :class="{ error: validationErrors.installment_price }"
+              />
+              <label for="installment_price" class="form-label">Installment Price</label>
+              <span v-if="validationErrors.installment_price" class="error-message">
+                {{ validationErrors.installment_price[0] }}
+              </span>
+            </div>
           </div>
-
           <!-- Installment Duration -->
           <div class="mb-3 inputs position-relative">
             <input
               type="number"
               id="installment_duration"
-              v-model="formData.installment_duration"
+              v-model="installmentDuration"
               class="form-control border-0"
               required
               placeholder=" "
               :class="{ error: validationErrors.installment_duration }"
+              readonly
             />
-            <label for="installment_duration" class="form-label"
-              >Installment Duration (months)</label
-            >
+            <label for="installment_duration" class="form-label">
+              Installment Duration ({{ planDurationLabel }})
+            </label>
             <span v-if="validationErrors.installment_duration" class="error-message">
               {{ validationErrors.installment_duration[0] }}
             </span>
@@ -197,7 +234,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import SuccessPopup from '@/components/SuccessPopup.vue'
 import ErrorPopup from '@/components/ErrorPopup.vue'
@@ -216,8 +253,12 @@ export default {
     const successMessage = ref('')
     const errorMessage = ref('')
     const validationErrors = ref({})
+    const productSearch = ref('')
+    const showProductDropdown = ref(false)
+    const products = ref([])
 
     const formData = ref({
+      plan_modal: '',
       plan_name: '',
       product_name: '',
       product_model: '',
@@ -227,6 +268,92 @@ export default {
       remaining_amount: null,
       installment_price: null,
       installment_duration: null,
+      product_id: '',
+    })
+
+    watch(
+      () => formData.value.plan_modal,
+      (newVal) => {
+        if (newVal === 'monthly') {
+          formData.value.plan_name = '12 Months Plan'
+        } else if (newVal === 'weekly' || newVal === 'daily') {
+          formData.value.plan_name = '6 Months Plan'
+        } else {
+          formData.value.plan_name = ''
+        }
+      },
+    )
+
+    const filteredProducts = computed(() => {
+      if (!productSearch.value) {
+        return products.value
+      }
+      return products.value.filter((product) =>
+        product.item_name.toLowerCase().includes(productSearch.value.toLowerCase()),
+      )
+    })
+
+    const selectProduct = (product) => {
+      formData.value.product_id = product.id
+      formData.value.product_name = product.item_name
+      formData.value.product_model = product.model
+      formData.value.product_price = product.price
+      productSearch.value = product.item_name
+      showProductDropdown.value = false
+    }
+
+    const fetchProducts = async () => {
+      try {
+        const result = await store.dispatch('getAllInventory')
+        if (result.success) {
+          products.value = result.data.inventory || []
+        } else {
+          console.error('Failed to load products:', result.message)
+        }
+      } catch (error) {
+        console.error('Error in fetchProducts:', error)
+      }
+    }
+
+    onMounted(() => {
+      fetchProducts()
+    })
+
+    const remainingAmount = computed(() => {
+      return formData.value.total_price - formData.value.advance
+    })
+
+    const installmentDuration = computed(() => {
+      if (formData.value.installment_price > 0) {
+        return Math.ceil(remainingAmount.value / formData.value.installment_price)
+      }
+      return 0
+    })
+
+    watch(
+      () => [formData.value.total_price, formData.value.advance],
+      () => {
+        formData.value.remaining_amount = remainingAmount.value
+      },
+    )
+
+    watch(
+      () => formData.value.installment_price,
+      () => {
+        formData.value.installment_duration = installmentDuration.value
+      },
+    )
+
+    const planDurationLabel = computed(() => {
+      if (formData.value.plan_modal === 'monthly') {
+        return 'months'
+      } else if (formData.value.plan_modal === 'weekly') {
+        return 'weeks'
+      } else if (formData.value.plan_modal === 'daily') {
+        return 'days'
+      } else {
+        return ''
+      }
     })
 
     const submitForm = async () => {
@@ -237,14 +364,9 @@ export default {
         showSuccess.value = false
         showError.value = false
 
-        const formDataToSend = new FormData()
-        for (const key in formData.value) {
-          formDataToSend.append(key, formData.value[key])
-        }
-
         const result = await store.dispatch(
           'installmentPlanStore/addInstallmentPlan',
-          formDataToSend,
+          formData.value,
         )
 
         if (result.success) {
@@ -272,6 +394,7 @@ export default {
 
     const resetForm = () => {
       formData.value = {
+        plan_modal: '',
         plan_name: '',
         product_name: '',
         product_model: '',
@@ -281,7 +404,9 @@ export default {
         remaining_amount: null,
         installment_price: null,
         installment_duration: null,
+        product_id: '',
       }
+      productSearch.value = ''
     }
 
     return {
@@ -293,6 +418,13 @@ export default {
       errorMessage,
       validationErrors,
       submitForm,
+      productSearch,
+      showProductDropdown,
+      filteredProducts,
+      selectProduct,
+      remainingAmount,
+      installmentDuration,
+      planDurationLabel,
     }
   },
 }
@@ -335,12 +467,33 @@ export default {
   pointer-events: none;
 }
 
+.form-label {
+  position: absolute;
+  top: 1.3rem;
+  left: 0.75rem;
+  font-size: 14px;
+  color: #000000;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none;
+}
+
 input:focus + .form-label,
-input:not(:placeholder-shown) + .form-label {
+input:not(:placeholder-shown) + .form-label,
+textarea:focus + .form-label,
+textarea:not(:placeholder-shown) + .form-label,
+select:focus + .form-label,
+select:not(:placeholder-shown) + .form-label {
   top: -0rem;
   left: 0.75rem;
   font-size: 0.75rem;
   margin-bottom: 0%;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border: none;
+  box-shadow: none;
 }
 
 input {
@@ -355,12 +508,36 @@ input:focus {
   box-shadow: none;
 }
 
+.w-48 {
+  width: 49%; /* Ensures both fields take up nearly half of the container */
+}
 .error-message {
   color: red;
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
+.form-label {
+  position: absolute;
+  top: 1.3rem;
+  left: 0.75rem;
+  font-size: 14px;
+  color: #000000;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none;
+}
+.category-label {
+  position: absolute;
+  top: -0rem;
+  left: 0.5rem;
+  font-size: 0.75rem;
+  background-color: white;
+  padding: 0 0.25rem;
+  color: #000000;
+  font-weight: bold;
+  z-index: 1;
+}
 /* Add responsive styles */
 @media (max-width: 768px) {
   .container-fluid {
@@ -374,5 +551,50 @@ input:focus {
   .col-md-12 {
     padding: 20px;
   }
+  .d-flex {
+    flex-direction: column;
+    width: 100%;
+  }
+  .w-48 {
+    width: 100% !important; /* Stack the inputs vertically and take full width */
+    margin-bottom: 10px; /* Add some space between inputs */
+  }
+}
+
+.search-select-container {
+  position: relative;
+}
+
+.custom-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+}
+
+.no-results {
+  color: #999;
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 0.5rem 0;
+  overflow: hidden;
+  background-color: #e9ecef;
 }
 </style>

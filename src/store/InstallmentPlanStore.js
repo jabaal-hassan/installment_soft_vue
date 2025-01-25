@@ -10,19 +10,20 @@ const getters = {
 
 const actions = {
   async addInstallmentPlan(_, payload) {
+    console.log('Payload being sent to API:', payload)
     try {
       const response = await AuthApiServices.PostRequest('/store-installment-plan', {
         plan_name: payload.plan_name,
-        city: payload.city,
+        plan_modal: payload.plan_modal,
         product_name: payload.product_name,
-        Product_model: payload.Product_model,
+        product_model: payload.product_model,
         product_price: payload.product_price,
         advance: payload.advance,
-        percentage: payload.percentage || null,
         total_price: payload.total_price,
         remaining_amount: payload.remaining_amount,
         installment_price: payload.installment_price,
         installment_duration: payload.installment_duration,
+        product_id: payload.product_id,
       })
 
       if (response.message === 'Installment plan created successfully') {
@@ -52,6 +53,7 @@ const mutations = {
 }
 
 export default {
+  namespaced: true,
   state,
   getters,
   actions,
