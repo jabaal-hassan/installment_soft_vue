@@ -134,16 +134,16 @@
             <div class="inputs position-relative w-48">
               <input
                 type="number"
-                id="advance"
-                v-model="formData.advance"
+                id="total_price"
+                v-model="formData.total_price"
                 class="form-control border-0"
                 required
                 placeholder=" "
-                :class="{ error: validationErrors.advance }"
+                :class="{ error: validationErrors.total_price }"
               />
-              <label for="advance" class="form-label">Advance</label>
-              <span v-if="validationErrors.advance" class="error-message">
-                {{ validationErrors.advance[0] }}
+              <label for="total_price" class="form-label">Total Price</label>
+              <span v-if="validationErrors.total_price" class="error-message">
+                {{ validationErrors.total_price[0] }}
               </span>
             </div>
           </div>
@@ -151,16 +151,16 @@
           <div class="mb-3 inputs position-relative">
             <input
               type="number"
-              id="total_price"
-              v-model="formData.total_price"
+              id="advance"
+              v-model="formData.advance"
               class="form-control border-0"
               required
               placeholder=" "
-              :class="{ error: validationErrors.total_price }"
+              :class="{ error: validationErrors.advance }"
             />
-            <label for="total_price" class="form-label">Total Price</label>
-            <span v-if="validationErrors.total_price" class="error-message">
-              {{ validationErrors.total_price[0] }}
+            <label for="advance" class="form-label">Advance</label>
+            <span v-if="validationErrors.advance" class="error-message">
+              {{ validationErrors.advance[0] }}
             </span>
           </div>
 

@@ -62,11 +62,7 @@
 
         <!-- Table Body -->
         <div class="table-body">
-          <div
-            v-for="plan in paginatedPlans"
-            :key="plan.id"
-            class="table-row"
-          >
+          <div v-for="plan in paginatedPlans" :key="plan.id" class="table-row">
             <!-- Plan Details -->
             <div class="plan-cell">
               <div class="plan-info">
@@ -99,7 +95,10 @@
               </div>
               <div class="financial-item">
                 <span class="financial-label">Installment:</span>
-                <span class="financial-value">Rs. {{ plan.installment_price }} for {{ plan.installment_duration }} months</span>
+                <span class="financial-value"
+                  >Rs. {{ plan.installment_price }} for
+                  {{ plan.installment_duration }} Installments</span
+                >
               </div>
             </div>
 
@@ -173,10 +172,7 @@
   </div>
 
   <!-- Add modal component -->
-  <EditInstallmentPlanModal
-    :plan="selectedPlan"
-    @updated="handlePlanUpdated"
-  />
+  <EditInstallmentPlanModal :plan="selectedPlan" @updated="handlePlanUpdated" />
 </template>
 
 <script setup>
@@ -270,22 +266,22 @@ const handleSearch = (event) => {
 
 // Add refs
 const selectedPlan = ref(null)
-let editModal = null
+// let editModal = null
 
 // // Initialize modal
 // onMounted(() => {
 //   editModal = new Modal(document.getElementById('editInstallmentPlanModal'))
 // })
 
-// Methods
-const openEditModal = async (plan) => {
-  selectedPlan.value = { ...plan }
-  if (editModal) {
-    editModal.show()
-  } else {
-    console.error('Edit modal not initialized')
-  }
-}
+// // Methods
+// const openEditModal = async (plan) => {
+//   selectedPlan.value = { ...plan }
+//   if (editModal) {
+//     editModal.show()
+//   } else {
+//     console.error('Edit modal not initialized')
+//   }
+// }
 
 const handlePlanUpdated = async () => {
   await fetchPlans() // Refresh the list

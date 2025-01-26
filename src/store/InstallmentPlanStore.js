@@ -69,6 +69,27 @@ const actions = {
       }
     }
   },
+
+  async deleteInstallmentPlan(_, id) {
+    try {
+      const response = await AuthApiServices.DeleteRequest(`/delete-installment-plan/${id}`)
+      if (response.message === 'Installment plan deleted successfully') {
+        return {
+          success: true,
+          message: 'Installment plan deleted successfully',
+        }
+      }
+      return {
+        success: false,
+        message: response.message || 'Failed to delete installment plan',
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error deleting installment plan',
+      }
+    }
+  },
 }
 
 const mutations = {
