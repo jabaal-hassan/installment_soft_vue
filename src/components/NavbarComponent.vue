@@ -13,14 +13,16 @@
         </button>
 
         <a class="navbar-brand mx-auto" href="#">
-          <img class="logo-mobile" src="../assets/udemy-logo.png" alt="logo" />
+          <img class="logo" :src="companyLogo" alt="company logo" />
         </a>
       </div>
 
       <!-- Desktop Logo (Left side) -->
       <a class="navbar-brand d-none d-lg-block" href="#">
-        <img class="logo" src="../assets/udemy-logo.png" alt="logo" />
-      </a>
+    <!-- Use dynamic binding for the logo image -->
+    <img class="logo" :src="companyLogo" alt="company logo" />
+  </a>
+
 
       <!-- Desktop & Tablet View - Navbar Links -->
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -143,16 +145,43 @@
               </li>
             </ul>
           </li>
+
+          <!-- New Installment Plan Dropdown -->
+          <li
+            class="nav-item dropdown"
+            v-if="isAdminOrBranchAdmin"
+            @mouseenter="openDropdown('installmentPlanDropdown')"
+            @mouseleave="closeDropdown('installmentPlanDropdown')"
+          >
+            <a class="nav-link" href="#" id="installmentPlanDropdown" role="button">
+              <i class="fas fa-calendar-alt me-2"></i> Installment Plan
+            </a>
+            <ul class="dropdown-menu" :class="{ show: isOpen.installmentPlanDropdown }">
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addInstallmentPlanDropdown')"
+                @mouseleave="closeDropdown('addInstallmentPlanDropdown')"
+              >
+                <router-link to="/dashboard/add-installment-plan" class="dropdown-item">
+                  <i class="fas fa-plus-circle me-2"></i> Add Installment Plan
+                </router-link>
+              </li>
+
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewInstallmentPlanDropdown')"
+                @mouseleave="closeDropdown('viewInstallmentPlanDropdown')"
+              >
+                <router-link to="/dashboard/view-installment-plans" class="dropdown-item">
+                  <i class="fas fa-list me-2"></i> View Installment Plans
+                </router-link>
+              </li>
+            </ul>
+          </li>
         </ul>
 
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <button @click="goToSearch" class="btn btn-outline-primary search-btn">
-              <i class="fas fa-search"></i>
-              <span class="ms-2">Search</span>
-            </button>
-          </li>
-          <li class="nav-item ms-3">
             <button @click="logout" class="btn btn-outline-danger btn-sm" :disabled="isLoggingOut">
               <span v-if="isLoggingOut" class="spinner">
                 <i class="fas fa-spinner fa-spin"></i>
@@ -168,13 +197,13 @@
 
 <script>
 import { mapActions, mapGetters, useStore } from 'vuex'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 export default {
   name: 'NavbarComponent',
   computed: {
-    ...mapGetters(['getLanguageModalState']),
+    ...mapGetters(['getLanguageModalState', 'getUserCompanyLogo']),
 
     isLoggedIn() {
       return this.$store.getters.isLoggedIn
@@ -198,6 +227,10 @@ export default {
       const role = this.$store.getters.getUserRole
       return role === 'admin' || role === 'company admin'
     },
+
+    companyLogo() {
+      return this.$store.getters.getUserCompanyLogo
+    }
   },
   setup() {
     const store = useStore()
@@ -207,10 +240,6 @@ export default {
     const showSuccessPopup = ref(false)
     const showErrorPopup = ref(false)
     const isLoggingOut = ref(false)
-    const searchQuery = ref('')
-    const searchResults = ref([])
-    const showResults = ref(false)
-    const searchTimeout = ref(null)
 
     const logout = async () => {
       isLoggingOut.value = true
@@ -233,87 +262,15 @@ export default {
       }
     }
 
-    const handleSearchInput = () => {
-      if (searchTimeout.value) clearTimeout(searchTimeout.value)
-
-      if (searchQuery.value.length > 2) {
-        searchTimeout.value = setTimeout(() => {
-          performSearch()
-        }, 300)
-      } else {
-        searchResults.value = []
-        showResults.value = false
-      }
-    }
-
-    const performSearch = async () => {
-      // Search in employees
-      const employeeResults = store.state.employees
-        .filter(
-          (emp) =>
-            emp.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            emp.email.toLowerCase().includes(searchQuery.value.toLowerCase()),
-        )
-        .map((emp) => ({
-          ...emp,
-          type: 'Employee',
-        }))
-
-      // Search in inventory
-      const inventoryResults = store.state.inventory
-        .filter(
-          (item) =>
-            item.product_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            item.category_name.toLowerCase().includes(searchQuery.value.toLowerCase()),
-        )
-        .map((item) => ({
-          ...item,
-          type: 'Inventory',
-        }))
-
-      searchResults.value = [...employeeResults, ...inventoryResults].slice(0, 5)
-      showResults.value = true
-    }
-
-    const navigateToResult = (result) => {
-      searchQuery.value = ''
-      showResults.value = false
-
-      if (result.type === 'Employee') {
-        router.push({
-          name: 'EmployeeView',
-          query: { highlight: result.id },
-        })
-      } else {
-        router.push({
-          name: 'InventoryView',
-          query: { highlight: result.id },
-        })
-      }
-    }
-
-    const getResultIcon = (type) => {
-      return type === 'Employee' ? 'fas fa-user' : 'fas fa-box'
-    }
-
-    // Close results when clicking outside
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.search-input')) {
-        showResults.value = false
-      }
-    }
-
     onMounted(() => {
-      document.addEventListener('click', handleClickOutside)
+      store.dispatch('getSingleCompany').then(response => {
+        if (response && response.data && response.data.company) {
+          store.commit('setUserCompanyLogo', response.data.company.logo);
+        }
+      }).catch(error => {
+        console.error('Error fetching company data:', error);
+      });
     })
-
-    onUnmounted(() => {
-      document.removeEventListener('click', handleClickOutside)
-    })
-
-    const goToSearch = () => {
-      router.push({ name: 'SearchResults' })
-    }
 
     return {
       successMessage,
@@ -322,14 +279,6 @@ export default {
       showErrorPopup,
       logout,
       isLoggingOut,
-      searchQuery,
-      searchResults,
-      showResults,
-      handleSearchInput,
-      performSearch,
-      navigateToResult,
-      getResultIcon,
-      goToSearch,
     }
   },
   methods: {
@@ -415,20 +364,6 @@ export default {
   color: #4158d0;
 }
 
-.search-input {
-  width: 100% !important;
-  height: 45px;
-  padding-left: 1.5rem !important;
-  font-size: 0.95rem;
-  border-radius: 25px !important;
-}
-
-.search-input:focus {
-  background: white;
-  box-shadow: 0 0 0 4px rgba(65, 88, 208, 0.1);
-  border-color: #4158d0;
-}
-
 .btn-outline-danger {
   border-radius: 20px;
   padding: 0.5rem 1.5rem;
@@ -454,13 +389,6 @@ export default {
     width: 100%;
   }
 
-  .search-input {
-    width: 100% !important;
-    height: 45px;
-    font-size: 0.95rem;
-    padding-left: 1.5rem !important;
-  }
-
   .input-group-text {
     left: 15px !important;
   }
@@ -469,10 +397,6 @@ export default {
 @media (max-width: 767.98px) {
   .logo-mobile {
     width: 3.5em;
-  }
-
-  .search-input {
-    font-size: 0.9rem;
   }
 
   .btn-outline-danger {
@@ -492,10 +416,6 @@ export default {
 
   .navbar-brand {
     margin-right: 0;
-  }
-
-  .search-input {
-    font-size: 0.85rem;
   }
 
   .nav-link {
@@ -537,118 +457,5 @@ export default {
 .fa-spinner {
   font-size: 0.9rem;
   color: #dc3545;
-}
-
-.search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  margin-top: 5px;
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 1000;
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.search-result-item:hover {
-  background: rgba(65, 88, 208, 0.05);
-}
-
-.search-result-item i {
-  color: #4158d0;
-  width: 20px;
-  text-align: center;
-}
-
-.result-info {
-  flex: 1;
-}
-
-.result-title {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.result-type {
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-/* Responsive styles */
-@media (max-width: 991.98px) {
-  .search-results {
-    position: fixed;
-    top: auto;
-    left: 10px;
-    right: 10px;
-    margin-top: 10px;
-  }
-}
-
-form.d-flex {
-  position: relative;
-  width: 40%;
-  margin: 0 auto;
-}
-
-.input-group {
-  width: 100%;
-}
-
-.search-input {
-  width: 100% !important;
-  height: 45px;
-  padding-left: 1.5rem !important;
-  font-size: 0.95rem;
-  border-radius: 25px !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 991.98px) {
-  form.d-flex {
-    width: 100%;
-    margin: 1rem 0;
-  }
-}
-
-.search-btn {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1.2rem;
-  border-radius: 20px;
-  transition: all 0.3s ease;
-  background: transparent;
-  border: 2px solid #4158d0;
-  color: #4158d0;
-}
-
-.search-btn:hover {
-  background: #4158d0;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(65, 88, 208, 0.15);
-}
-
-@media (max-width: 768px) {
-  .search-btn {
-    padding: 0.4rem 1rem;
-    font-size: 0.9rem;
-  }
-
-  .search-btn span {
-    display: none;
-  }
 }
 </style>

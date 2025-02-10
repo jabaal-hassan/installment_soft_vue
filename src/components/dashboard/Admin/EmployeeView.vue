@@ -192,6 +192,26 @@
                 <i class="fas fa-money-bill"></i>
                 <span>Pay: Rs. {{ employee.pay }}</span>
               </div>
+              <div class="info-item">
+                <i class="fas fa-question-circle"></i>
+                <span>Inquiry:</span>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    v-model="employee.inquiry"
+                    @change="toggleInquiry(employee)"
+                  />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="info-item">
+                <i class="fas fa-undo-alt"></i>
+                <span>Recovery:</span>
+                <label class="switch">
+                  <input type="checkbox" v-model="employee.recovery" />
+                  <span class="slider round"></span>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -413,7 +433,7 @@
   transition: all 0.3s ease;
 }
 
-.phone-container:hover {
+phone-container:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(65, 88, 208, 0.12);
 }
@@ -478,6 +498,7 @@
 
 .info-grid {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
@@ -905,6 +926,51 @@
   color: white;
 }
 
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: '';
+  height: 12px;
+  width: 12px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #28a745;
+}
+
+input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
 @media (max-width: 768px) {
   .search-wrapper {
     width: 90%;
@@ -1093,6 +1159,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
+import AuthApiServices from '@/services/AuthApiServices'
 
 const store = useStore()
 const employees = ref([])
@@ -1168,6 +1235,18 @@ const changePage = (page) => {
   }
 }
 
+// Add inquiry and recovery properties to employee object if not present
+const addProperties = (employees) => {
+  employees.forEach((employee) => {
+    if (employee.inquiry === undefined) {
+      employee.inquiry = false
+    }
+    if (employee.recovery === undefined) {
+      employee.recovery = false
+    }
+  })
+}
+
 // Fetch employees
 const fetchEmployees = async () => {
   try {
@@ -1175,6 +1254,7 @@ const fetchEmployees = async () => {
     const response = await store.dispatch('getAllEmployees')
     if (response.success) {
       employees.value = response.employees
+      addProperties(employees.value)
     }
   } catch (error) {
     console.error('Error fetching employees:', error)
@@ -1183,9 +1263,36 @@ const fetchEmployees = async () => {
   }
 }
 
+const fetchInquiryOfficers = async () => {
+  try {
+    const response = await AuthApiServices.GetRequest('/get-inquiry-officers')
+
+    let inquiryOfficers = []
+
+    if (Array.isArray(response.data)) {
+      // API direct array return kar rahi hai
+      inquiryOfficers = response.data
+    } else if (response.data && Array.isArray(response.data.data)) {
+      // Expected structure
+      inquiryOfficers = response.data.data
+    } else {
+      throw new Error('API response format is incorrect')
+    }
+
+    const inquiryOfficerIds = inquiryOfficers.map((officer) => officer.employee_id)
+    console.log('Extracted Employee IDs:', inquiryOfficerIds)
+
+    employees.value.forEach((employee) => {
+      employee.inquiry = inquiryOfficerIds.includes(employee.id)
+    })
+  } catch (error) {
+    console.error('Fetch Inquiry Officers Error:', error.message || error.toString())
+  }
+}
+
 // Fetch both employees and companies on mount
 onMounted(async () => {
-  await Promise.all([fetchEmployees(), fetchCompanies()])
+  await Promise.all([fetchEmployees(), fetchCompanies(), fetchInquiryOfficers()])
   imageModal = new Modal(document.getElementById('imageModal'))
 })
 
@@ -1261,7 +1368,7 @@ const printEmployees = () => {
       <body>
         <div class="header">
           <img src="/logo.png" class="logo" />
-          <div class="company-name">Installmantsof</div>
+<div class="company-name">Installmantsof</div>
           <div class="report-title">Employee List Report</div>
           <div class="date">Generated on: ${new Date().toLocaleDateString()}</div>
         </div>
@@ -1311,5 +1418,28 @@ const printEmployees = () => {
   printWindow.document.write(printContent)
   printWindow.document.close()
   printWindow.onload = () => printWindow.print()
+}
+const toggleInquiry = async (employee) => {
+  try {
+    let response
+    let newStatus
+
+    if (employee.inquiry) {
+      response = await AuthApiServices.PostRequest(`/add-inquiry-officer/${employee.id}`)
+      newStatus = true
+    } else {
+      response = await AuthApiServices.DeleteRequest(`/delete-inquiry-officer/${employee.id}`)
+      newStatus = false
+    }
+
+    if (response?.status === 200) {
+      console.log('Success:', response.data.message)
+      employee.inquiry = newStatus // Update UI state
+    } else {
+      console.warn('Unexpected API response:', response)
+    }
+  } catch (error) {
+    console.error('Full Error Object:', error)
+  }
 }
 </script>
