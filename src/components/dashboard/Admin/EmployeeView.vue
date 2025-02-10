@@ -1263,9 +1263,36 @@ const fetchEmployees = async () => {
   }
 }
 
+const fetchInquiryOfficers = async () => {
+  try {
+    const response = await AuthApiServices.GetRequest('/get-inquiry-officers')
+
+    let inquiryOfficers = []
+
+    if (Array.isArray(response.data)) {
+      // API direct array return kar rahi hai
+      inquiryOfficers = response.data
+    } else if (response.data && Array.isArray(response.data.data)) {
+      // Expected structure
+      inquiryOfficers = response.data.data
+    } else {
+      throw new Error('API response format is incorrect')
+    }
+
+    const inquiryOfficerIds = inquiryOfficers.map((officer) => officer.employee_id)
+    console.log('Extracted Employee IDs:', inquiryOfficerIds)
+
+    employees.value.forEach((employee) => {
+      employee.inquiry = inquiryOfficerIds.includes(employee.id)
+    })
+  } catch (error) {
+    console.error('Fetch Inquiry Officers Error:', error.message || error.toString())
+  }
+}
+
 // Fetch both employees and companies on mount
 onMounted(async () => {
-  await Promise.all([fetchEmployees(), fetchCompanies()])
+  await Promise.all([fetchEmployees(), fetchCompanies(), fetchInquiryOfficers()])
   imageModal = new Modal(document.getElementById('imageModal'))
 })
 
@@ -1400,14 +1427,14 @@ const toggleInquiry = async (employee) => {
         'Content-Type': 'application/json',
       },
     })
-    const data = await response.data
+    const data = response.data
     if (response.status === 200) {
       console.log(data.message)
     } else {
       console.error('Error:', data.message)
     }
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error.message)
   }
 }
 </script>
