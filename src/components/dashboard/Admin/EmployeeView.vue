@@ -196,7 +196,11 @@
                 <i class="fas fa-question-circle"></i>
                 <span>Inquiry:</span>
                 <label class="switch">
-                  <input type="checkbox" v-model="employee.inquiry" />
+                  <input
+                    type="checkbox"
+                    v-model="employee.inquiry"
+                    @change="toggleInquiry(employee)"
+                  />
                   <span class="slider round"></span>
                 </label>
               </div>
@@ -1155,6 +1159,7 @@ input:checked + .slider:before {
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
+import AuthApiServices from '@/services/AuthApiServices'
 
 const store = useStore()
 const employees = ref([])
@@ -1386,5 +1391,23 @@ const printEmployees = () => {
   printWindow.document.write(printContent)
   printWindow.document.close()
   printWindow.onload = () => printWindow.print()
+}
+
+const toggleInquiry = async (employee) => {
+  try {
+    const response = await AuthApiServices.PostRequest(`/add-inquiry-officer/${employee.id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    const data = await response.data
+    if (response.status === 200) {
+      console.log(data.message)
+    } else {
+      console.error('Error:', data.message)
+    }
+  } catch (error) {
+    console.error('Error:', error)
+  }
 }
 </script>
