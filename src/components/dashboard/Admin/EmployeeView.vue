@@ -1419,22 +1419,27 @@ const printEmployees = () => {
   printWindow.document.close()
   printWindow.onload = () => printWindow.print()
 }
-
 const toggleInquiry = async (employee) => {
   try {
-    const response = await AuthApiServices.PostRequest(`/add-inquiry-officer/${employee.id}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const data = response.data
-    if (response.status === 200) {
-      console.log(data.message)
+    let response
+    let newStatus
+
+    if (employee.inquiry) {
+      response = await AuthApiServices.PostRequest(`/add-inquiry-officer/${employee.id}`)
+      newStatus = true
     } else {
-      console.error('Error:', data.message)
+      response = await AuthApiServices.DeleteRequest(`/delete-inquiry-officer/${employee.id}`)
+      newStatus = false
+    }
+
+    if (response?.status === 200) {
+      console.log('Success:', response.data.message)
+      employee.inquiry = newStatus // Update UI state
+    } else {
+      console.warn('Unexpected API response:', response)
     }
   } catch (error) {
-    console.error('Error:', error.message)
+    console.error('Full Error Object:', error)
   }
 }
 </script>
