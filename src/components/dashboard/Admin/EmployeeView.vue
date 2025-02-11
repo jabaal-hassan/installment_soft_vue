@@ -208,7 +208,11 @@
                 <i class="fas fa-undo-alt"></i>
                 <span>Recovery:</span>
                 <label class="switch">
-                  <input type="checkbox" v-model="employee.recovery" />
+                  <input
+                    type="checkbox"
+                    v-model="employee.recovery"
+                    @change="toggleRecovery(employee)"
+                  />
                   <span class="slider round"></span>
                 </label>
               </div>
@@ -1289,10 +1293,40 @@ const fetchInquiryOfficers = async () => {
     console.error('Fetch Inquiry Officers Error:', error.message || error.toString())
   }
 }
+const fetchRecoveryOfficers = async () => {
+  try {
+    const response = await AuthApiServices.GetRequest('/get-recovery-officers')
 
+    let recoveryOfficers = []
+
+    if (Array.isArray(response.data)) {
+      // API direct array return kar rahi hai
+      recoveryOfficers = response.data
+    } else if (response.data && Array.isArray(response.data.data)) {
+      // Expected structure
+      recoveryOfficers = response.data.data
+    } else {
+      throw new Error('API response format is incorrect')
+    }
+
+    const recoveryOfficerIds = recoveryOfficers.map((officer) => officer.employee_id)
+    console.log('Extracted Employee IDs:', recoveryOfficerIds)
+
+    employees.value.forEach((employee) => {
+      employee.recovery = recoveryOfficerIds.includes(employee.id)
+    })
+  } catch (error) {
+    console.error('Fetch Recovery Officers Error:', error.message || error.toString())
+  }
+}
 // Fetch both employees and companies on mount
 onMounted(async () => {
-  await Promise.all([fetchEmployees(), fetchCompanies(), fetchInquiryOfficers()])
+  await Promise.all([
+    fetchEmployees(),
+    fetchCompanies(),
+    fetchInquiryOfficers(),
+    fetchRecoveryOfficers(),
+  ])
   imageModal = new Modal(document.getElementById('imageModal'))
 })
 
@@ -1435,6 +1469,29 @@ const toggleInquiry = async (employee) => {
     if (response?.status === 200) {
       console.log('Success:', response.data.message)
       employee.inquiry = newStatus // Update UI state
+    } else {
+      console.warn('Unexpected API response:', response)
+    }
+  } catch (error) {
+    console.error('Full Error Object:', error)
+  }
+}
+const toggleRecovery = async (employee) => {
+  try {
+    let response
+    let newStatus
+
+    if (employee.recovery) {
+      response = await AuthApiServices.PostRequest(`/add-recovery-officer/${employee.id}`)
+      newStatus = true
+    } else {
+      response = await AuthApiServices.DeleteRequest(`/delete-recovery-officer/${employee.id}`)
+      newStatus = false
+    }
+
+    if (response?.status === 200) {
+      console.log('Success:', response.data.message)
+      employee.recovery = newStatus // Update UI state
     } else {
       console.warn('Unexpected API response:', response)
     }
