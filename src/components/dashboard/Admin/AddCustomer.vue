@@ -360,14 +360,14 @@
         <div class="modal-body p-0">
           <div class="camera-container">
             <video ref="videoElement" autoplay playsinline class="camera-video"></video>
-            <div v-if="isOcrEnabled" class="card-guide">
+            <div v-if="showCardGuide" class="card-guide">
               <div class="corner-tl"></div>
               <div class="corner-tr"></div>
               <div class="corner-bl"></div>
               <div class="corner-br"></div>
             </div>
             <div class="guide-text">
-              {{ isOcrEnabled ? 'Align ID card within the frame' : 'Position subject in frame' }}
+              {{ showCardGuide ? 'Align ID card within the frame' : 'Position subject in frame' }}
             </div>
             <button @click="captureImage" class="capture-btn">
               <i class="fas fa-camera"></i>
@@ -1225,9 +1225,11 @@ export default {
     }
 
     const currentImageType = ref(null)
-    const isOcrEnabled = computed(() =>
+    const showCardGuide = computed(() =>
       ['cnic_front_image', 'cnic_back_image'].includes(currentImageType.value),
     )
+
+    const isOcrEnabled = computed(() => ['cnic_front_image'].includes(currentImageType.value))
 
     // Modified openCameraModal to handle different image types
     const openCameraModal = async (imageType) => {
@@ -1435,8 +1437,10 @@ export default {
       if (file) {
         formData.value[field] = file
 
-        // Process OCR on the uploaded image
-        await processOCR(file)
+        // Only process OCR for CNIC front image
+        if (field === 'cnic_front_image') {
+          await processOCR(file)
+        }
 
         // Clear validation error for this field if it exists
         if (validationErrors.value[field]) {
@@ -1549,6 +1553,7 @@ export default {
       currentImageType,
       isOcrEnabled,
       detectedValues,
+      showCardGuide,
     }
   },
 }
