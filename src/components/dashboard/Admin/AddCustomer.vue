@@ -37,6 +37,7 @@
                   :src="getImagePreviewUrl(formData.cnic_front_image)"
                   class="preview-image"
                   alt="CNIC Front"
+                  @click="openImagePreview('cnic_front_image')"
                 />
                 <button @click="removeImage('cnic_front_image')" class="remove-image-btn">
                   <i class="fas fa-times"></i>
@@ -70,6 +71,7 @@
                   :src="getImagePreviewUrl(formData.cnic_back_image)"
                   class="preview-image"
                   alt="CNIC Back"
+                  @click="openImagePreview('cnic_back_image')"
                 />
                 <button @click="removeImage('cnic_back_image')" class="remove-image-btn">
                   <i class="fas fa-times"></i>
@@ -106,6 +108,7 @@
                   :src="getImagePreviewUrl(formData.customer_image)"
                   class="preview-image"
                   alt="Customer"
+                  @click="openImagePreview('customer_image')"
                 />
                 <button @click="removeImage('customer_image')" class="remove-image-btn">
                   <i class="fas fa-times"></i>
@@ -139,6 +142,7 @@
                   :src="getImagePreviewUrl(formData.check_image)"
                   class="preview-image"
                   alt="Check"
+                  @click="openImagePreview('check_image')"
                 />
                 <button @click="removeImage('check_image')" class="remove-image-btn">
                   <i class="fas fa-times"></i>
@@ -360,14 +364,18 @@
         <div class="modal-body p-0">
           <div class="camera-container">
             <video ref="videoElement" autoplay playsinline class="camera-video"></video>
-            <div v-if="showCardGuide" class="card-guide">
+            <div
+              v-if="showCardGuide"
+              class="card-guide"
+              :class="{ 'passport-guide': currentImageType === 'customer_image' }"
+            >
               <div class="corner-tl"></div>
               <div class="corner-tr"></div>
               <div class="corner-bl"></div>
               <div class="corner-br"></div>
             </div>
             <div class="guide-text">
-              {{ showCardGuide ? 'Align ID card within the frame' : 'Position subject in frame' }}
+              {{ getGuideText }}
             </div>
             <button @click="captureImage" class="capture-btn">
               <i class="fas fa-camera"></i>
@@ -377,7 +385,25 @@
       </div>
     </div>
   </div>
+
+  <!-- Full Image Preview Modal -->
+  <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Image Preview</h5>
+          <button type="button" class="btn-close" @click="closeImagePreview"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="full-image-container">
+            <img :src="selectedImageUrl" class="full-preview-image" alt="Full Preview" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+
 <style scoped>
 .w-48 {
   width: 49%;
@@ -664,6 +690,9 @@ select option {
   height: 60vh;
   background: #000;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .camera-video {
@@ -724,7 +753,7 @@ select option {
 
 .guide-text {
   position: absolute;
-  top: 20%;
+  top: 10%;
   left: 50%;
   transform: translateX(-50%);
   color: white;
@@ -1063,6 +1092,53 @@ select option {
     gap: 8px;
   }
 }
+
+/* Add new styles for passport guide */
+.passport-guide {
+  width: 60mm !important;
+  height: 50mm !important;
+  border: 2px solid rgba(0, 255, 0, 0.7);
+  background: transparent;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Add these new styles for full image preview */
+.image-preview-container img {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.image-preview-container img:hover {
+  transform: scale(1.05);
+}
+
+.full-image-container {
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
+}
+
+.full-preview-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+/* Add zoom effect on hover */
+.preview-image {
+  transition: transform 0.3s ease;
+}
+
+.preview-image:hover {
+  transform: scale(1.05);
+}
 </style>
 
 <script>
@@ -1226,8 +1302,20 @@ export default {
 
     const currentImageType = ref(null)
     const showCardGuide = computed(() =>
-      ['cnic_front_image', 'cnic_back_image'].includes(currentImageType.value),
+      ['cnic_front_image', 'cnic_back_image', 'customer_image'].includes(currentImageType.value),
     )
+
+    const getGuideText = computed(() => {
+      switch (currentImageType.value) {
+        case 'customer_image':
+          return 'Align face within frame'
+        case 'cnic_front_image':
+        case 'cnic_back_image':
+          return 'Align ID card within the frame'
+        default:
+          return 'Position subject in frame'
+      }
+    })
 
     const isOcrEnabled = computed(() => ['cnic_front_image'].includes(currentImageType.value))
 
@@ -1276,29 +1364,62 @@ export default {
 
       const video = videoElement.value
       const videoRect = video.getBoundingClientRect()
-      const guideElement = document.querySelector('.card-guide')
+      const guideElement = document.querySelector(
+        currentImageType.value === 'customer_image' ? '.passport-guide' : '.card-guide',
+      )
       const guideRect = guideElement.getBoundingClientRect()
 
-      // Calculate scaling factors
-      const scaleX = video.videoWidth / videoRect.width
-      const scaleY = video.videoHeight / videoRect.height
+      // Create canvas with proper dimensions
+      const canvas = document.createElement('canvas')
 
-      // Calculate crop dimensions
-      const cropX = (guideRect.left - videoRect.left) * scaleX
-      const cropY = (guideRect.top - videoRect.top) * scaleY
+      // Calculate video to display ratio
+      const videoAspectRatio = video.videoWidth / video.videoHeight
+      const displayAspectRatio = videoRect.width / videoRect.height
+
+      let videoDisplayWidth = videoRect.width
+      let videoDisplayHeight = videoRect.height
+      let offsetX = 0
+      let offsetY = 0
+
+      if (displayAspectRatio > videoAspectRatio) {
+        // Display is wider than video
+        videoDisplayWidth = videoDisplayHeight * videoAspectRatio
+        offsetX = (videoRect.width - videoDisplayWidth) / 2
+      } else {
+        // Display is taller than video
+        videoDisplayHeight = videoDisplayWidth / videoAspectRatio
+        offsetY = (videoRect.height - videoDisplayHeight) / 2
+      }
+
+      // Calculate scaling factors
+      const scaleX = video.videoWidth / videoDisplayWidth
+      const scaleY = video.videoHeight / videoDisplayHeight
+
+      // Calculate crop dimensions in actual video coordinates
+      const cropX = Math.max(0, (guideRect.left - videoRect.left - offsetX) * scaleX)
+      const cropY = Math.max(0, (guideRect.top - videoRect.top - offsetY) * scaleY)
       const cropWidth = guideRect.width * scaleX
       const cropHeight = guideRect.height * scaleY
 
-      // Create canvas with guide frame dimensions
-      const canvas = document.createElement('canvas')
-      canvas.width = cropWidth
-      canvas.height = cropHeight
+      // Set canvas dimensions based on image type
+      if (currentImageType.value === 'customer_image') {
+        canvas.width = 708
+        canvas.height = 590
+      } else {
+        canvas.width = 856 // 85.6mm at 300 DPI
+        canvas.height = 540 // 54mm at 300 DPI
+      }
 
       const ctx = canvas.getContext('2d')
-      // Draw only the cropped portion
-      ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight)
 
-      // Convert to blob and save
+      // Enable high-quality image scaling
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+
+      // Draw and crop the image
+      ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height)
+
+      // Convert to blob with high quality
       canvas.toBlob(
         (blob) => {
           formData.value[currentImageType.value] = blob
@@ -1308,7 +1429,7 @@ export default {
           stopScanner()
         },
         'image/jpeg',
-        0.95,
+        0.95, // High quality for all images
       )
     }
 
@@ -1344,6 +1465,7 @@ export default {
     // ===================================
     onMounted(() => {
       modal.value = new Modal(document.getElementById('scannerModal'))
+      imagePreviewModal.value = new Modal(document.getElementById('imagePreviewModal'))
     })
 
     onMounted(async () => {
@@ -1521,6 +1643,25 @@ export default {
       formData.value[field] = null
     }
 
+    // Add these new refs and functions for image preview
+    const imagePreviewModal = ref(null)
+    const selectedImageUrl = ref('')
+
+    // Add function to open full image preview
+    const openImagePreview = (imageField) => {
+      const image = formData.value[imageField]
+      if (image) {
+        selectedImageUrl.value = getImagePreviewUrl(image)
+        imagePreviewModal.value.show()
+      }
+    }
+
+    // Add function to close image preview
+    const closeImagePreview = () => {
+      imagePreviewModal.value.hide()
+      selectedImageUrl.value = ''
+    }
+
     // Return all required refs and functions
     return {
       formData,
@@ -1554,6 +1695,10 @@ export default {
       isOcrEnabled,
       detectedValues,
       showCardGuide,
+      getGuideText,
+      selectedImageUrl,
+      openImagePreview,
+      closeImagePreview,
     }
   },
 }
