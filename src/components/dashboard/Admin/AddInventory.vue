@@ -698,19 +698,89 @@ export default {
 </script>
 
 <style scoped>
+/* Update signup button styles */
 .signup-btn {
-  background-color: #8710d8;
-  height: 10vh;
-  color: #fff;
+  position: relative;
+  background: linear-gradient(135deg, #8710d8, #7209b7);
+  color: white;
+  font-weight: 500;
+  height: 80px;
+  letter-spacing: 1px;
+  border-radius: 8px;
   border: none;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(135, 16, 216, 0.2);
+  text-transform: uppercase;
+  font-size: 16px;
+}
+
+.signup-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.signup-btn:not(:disabled):hover::before {
+  left: 100%;
+}
+
+.signup-btn:not(:disabled):hover {
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(135, 16, 216, 0.3);
+  background: linear-gradient(135deg, #7209b7, #5b0894);
+}
+
+.signup-btn:disabled {
+  background: linear-gradient(135deg, #a17eb8, #8e6aa3);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.signup-btn .button-content,
+.signup-btn .loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.signup-btn i {
+  transition: transform 0.3s ease;
+}
+
+.signup-btn:not(:disabled):hover i {
+  transform: translateX(5px) scale(1.1);
+}
+
+.signup-btn .fa-spinner {
+  font-size: 18px;
+}
+
+/* Add shine animation */
+@keyframes shine {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.signup-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 .w-48 {
   width: 49%; /* Ensures both fields take up nearly half of the container */
-}
-
-.signup-btn:hover {
-  background-color: #7f0fc9;
-  color: white;
 }
 
 .container-fluid {
