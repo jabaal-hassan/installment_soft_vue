@@ -1,9 +1,35 @@
 <template>
   <div class="container-fluid d-flex align-items-center justify-content-center bg-white my-4">
     <div class="row w-75 shadow-lg">
-      <!-- Right Side - Add Employee Form -->
       <div class="col-md-12 bg-white p-5">
-        <h1 class="mb-4 fs-3 fw-bold">Add Customer</h1>
+        <!-- Add header with scan button -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 class="fs-3 fw-bold m-0">Add Customer</h1>
+          <button type="button" class="btn btn-outline-secondary" @click="startScanner">
+            <i class="fas fa-qrcode me-2"></i>Scan QR/Barcode
+          </button>
+        </div>
+
+        <!-- Add scanner modal -->
+        <div
+          class="modal fade"
+          id="barcodeModal"
+          tabindex="-1"
+          aria-labelledby="barcodeModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="barcodeModalLabel">Scan QR/Barcode</h5>
+                <button type="button" class="btn-close" @click="stopBarcodeScanner"></button>
+              </div>
+              <div class="modal-body">
+                <div id="barcodeReader"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Success and Error Popup Components -->
         <SuccessPopup :show="showSuccess" :message="successMessage" />
@@ -231,40 +257,31 @@
           </div>
 
           <!-- Address and Office Address -->
-          <div class="mb-3 d-flex justify-content-between">
-            <div class="inputs position-relative w-48">
-              <textarea
-                id="address"
-                v-model="formData.address"
-                class="form-control border-0"
-                required
-                placeholder=" "
-              ></textarea>
-              <label for="address" class="form-label">Address</label>
-            </div>
-            <div class="inputs position-relative w-48">
-              <textarea
-                id="office_address"
-                v-model="formData.office_address"
-                class="form-control border-0"
-                required
-                placeholder=" "
-              ></textarea>
-              <label for="office_address" class="form-label">Office Address</label>
-            </div>
+          <div class="mb-3 inputs position-relative">
+            <textarea
+              id="address"
+              v-model="formData.address"
+              class="form-control border-0"
+              required
+              placeholder=" "
+            ></textarea>
+            <label for="address" class="form-label">Address</label>
           </div>
 
           <!-- Employment Type and Company Name -->
           <div class="mb-3 d-flex justify-content-between">
             <div class="inputs position-relative w-48">
-              <input
-                type="text"
+              <select
                 id="employment_type"
                 v-model="formData.employment_type"
                 class="form-control border-0"
                 required
                 placeholder=" "
-              />
+              >
+                <option value="" disabled selected>Select Employment Type</option>
+                <option value="Own Business">Own Business</option>
+                <option value="Company Employee">Company Employee</option>
+              </select>
               <label for="employment_type" class="form-label">Employment Type</label>
             </div>
             <div class="inputs position-relative w-48">
@@ -276,10 +293,21 @@
                 required
                 placeholder=" "
               />
-              <label for="company_name" class="form-label">Company Name</label>
+              <label for="company_name" class="form-label">
+                {{ formData.employment_type === 'Own Business' ? 'Business Name' : 'Company Name' }}
+              </label>
             </div>
           </div>
-
+          <div class="mb-3 inputs position-relative">
+            <textarea
+              id="office_address"
+              v-model="formData.office_address"
+              class="form-control border-0"
+              required
+              placeholder=" "
+            ></textarea>
+            <label for="office_address" class="form-label">Office Address</label>
+          </div>
           <!-- Years of Experience -->
           <div class="mb-3 inputs position-relative">
             <input
@@ -303,6 +331,7 @@
                 class="form-control border-0"
                 required
                 placeholder=" "
+                @input="handleItemOrModelChange"
               />
               <label for="item_name" class="form-label">Item Name</label>
             </div>
@@ -314,6 +343,7 @@
                 class="form-control border-0"
                 required
                 placeholder=" "
+                @input="handleItemOrModelChange"
               />
               <label for="model" class="form-label">Model</label>
             </div>
@@ -321,15 +351,61 @@
 
           <!-- Installment Plan ID -->
           <div class="mb-3 inputs position-relative">
-            <input
-              type="number"
-              id="installment_plan_id"
-              v-model="formData.installment_plan_id"
-              class="form-control border-0"
-              required
-              placeholder=" "
-            />
-            <label for="installment_plan_id" class="form-label">Installment Plan ID</label>
+            <label class="form-label notwrok">Installment Plan</label>
+            <div class="search-select-container">
+              <input
+                type="text"
+                v-model="installmentPlanSearch"
+                class="form-control search-input border-0"
+                :placeholder="selectedPlan ? selectedPlan : 'Search Plan, Product or Model...'"
+                @focus="showInstallmentPlanDropdown = true"
+              />
+              <div v-if="showInstallmentPlanDropdown" class="custom-dropdown">
+                <template v-if="filteredInstallmentPlans.length > 0">
+                  <div
+                    v-for="plan in filteredInstallmentPlans"
+                    :key="plan.id"
+                    class="dropdown-item plan-item"
+                    @click="selectInstallmentPlan(plan)"
+                  >
+                    <div class="plan-header">
+                      <span class="plan-name">{{ plan.plan_name }}</span>
+                      <span class="product-name">{{ plan.Product_name }}</span>
+                    </div>
+                    <div class="plan-details">
+                      <div class="detail-row">
+                        <span class="detail-label">Product:</span>
+                        <span class="detail-value"
+                          >{{ plan.Product_name }} ({{ plan.Product_model }})</span
+                        >
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Price:</span>
+                        <span class="detail-value">Rs. {{ plan.product_price }}</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Total:</span>
+                        <span class="detail-value">Rs. {{ plan.total_price }}</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Advance:</span>
+                        <span class="detail-value">Rs. {{ plan.advance }}</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Installment:</span>
+                        <span class="detail-value"
+                          >Rs. {{ plan.installment_price }} × {{ plan.installment_duration }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="dropdown-item no-results">No installment plans found</div>
+                </template>
+              </div>
+              <input type="hidden" v-model="formData.installment_plan_id" required />
+            </div>
           </div>
 
           <!-- Submit Button -->
@@ -1139,15 +1215,141 @@ select option {
 .preview-image:hover {
   transform: scale(1.05);
 }
+
+/* Add these styles for the select element */
+select.form-control {
+  height: 5vh;
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  padding-right: 25px;
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")
+    right 0.5rem center/1em no-repeat;
+}
+
+select.form-control:focus {
+  outline: none;
+}
+
+select.form-control option {
+  background: white;
+  color: #333;
+  padding: 8px;
+}
+
+/* Add these styles for the barcode scanner */
+#barcodeReader {
+  width: 100%;
+  min-height: 300px;
+}
+
+#barcodeReader video {
+  width: 100%;
+  height: auto;
+}
+
+/* Add styles for the scan button */
+.btn-outline-secondary {
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  border: 2px solid #4a4a4a;
+  color: #4a4a4a;
+}
+
+.btn-outline-secondary:hover {
+  background: #4a4a4a;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Add these new styles for the installment plan dropdown */
+.plan-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plan-item:hover {
+  background-color: #f8f9fa;
+  transform: translateX(5px);
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.plan-name {
+  font-weight: 600;
+  color: #8710d8;
+  font-size: 1rem;
+}
+
+.plan-modal {
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: #495057;
+  text-transform: capitalize;
+}
+
+.plan-details {
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #212529;
+  font-weight: 600;
+}
+
+.custom-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 9999; /* Increased z-index to appear above other elements */
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 </style>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useStore } from 'vuex'
 import SuccessPopup from '@/components/SuccessPopup.vue'
 import ErrorPopup from '@/components/ErrorPopup.vue'
 import { Modal } from 'bootstrap'
 import { createWorker } from 'tesseract.js'
+import { Html5Qrcode } from 'html5-qrcode'
 
 export default {
   components: {
@@ -1457,7 +1659,10 @@ export default {
 
     // Clean up on component unmount
     onBeforeUnmount(() => {
+      stopBarcodeScanner()
       stopScanner()
+      // Remove event listeners
+      document.removeEventListener('click', handleClickOutside)
     })
 
     // ===================================
@@ -1466,6 +1671,7 @@ export default {
     onMounted(() => {
       modal.value = new Modal(document.getElementById('scannerModal'))
       imagePreviewModal.value = new Modal(document.getElementById('imagePreviewModal'))
+      barcodeModal.value = new Modal(document.getElementById('barcodeModal'))
     })
 
     onMounted(async () => {
@@ -1662,8 +1868,221 @@ export default {
       selectedImageUrl.value = ''
     }
 
-    // Return all required refs and functions
+    // Add new refs for barcode scanner
+    const barcodeModal = ref(null)
+    const html5QrCode = ref(null)
+
+    const startScanner = async () => {
+      try {
+        html5QrCode.value = new Html5Qrcode('barcodeReader')
+        barcodeModal.value.show()
+
+        await html5QrCode.value.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          onScanSuccess,
+          onScanFailure,
+        )
+      } catch (err) {
+        console.error('Error starting scanner:', err)
+        showError.value = true
+        errorMessage.value = 'Could not start scanner. Please check camera permissions.'
+      }
+    }
+
+    const stopBarcodeScanner = async () => {
+      if (html5QrCode.value) {
+        try {
+          await html5QrCode.value.stop()
+          html5QrCode.value = null
+        } catch (err) {
+          console.error('Error stopping scanner:', err)
+        }
+      }
+      barcodeModal.value.hide()
+    }
+
+    const onScanSuccess = async (decodedText) => {
+      try {
+        await stopBarcodeScanner()
+        console.log('Scanned QR/Barcode:', decodedText)
+
+        // Parse the scanned data
+        const pairs = decodedText.split(',').map((item) => item.trim())
+
+        pairs.forEach((pair) => {
+          const [key, value] = pair.split(':').map((item) => item.trim())
+          switch (key.toLowerCase()) {
+            case 'item':
+            case 'name':
+              formData.value.item_name = value
+              break
+            case 'model':
+              formData.value.model = value
+              break
+          }
+        })
+
+        showSuccess.value = true
+        successMessage.value = 'Item details scanned successfully!'
+
+        // Add timeout to hide success message after 5 seconds
+        setTimeout(() => {
+          showSuccess.value = false
+          successMessage.value = ''
+        }, 5000)
+      } catch (err) {
+        console.error('Scan processing error:', err)
+        showError.value = true
+        errorMessage.value = 'Error processing scanned data'
+
+        // Add timeout for error message as well
+        setTimeout(() => {
+          showError.value = false
+          errorMessage.value = ''
+        }, 5000)
+      }
+    }
+
+    const onScanFailure = (error) => {
+      // Silent failure - no need to show error to user
+      console.log('QR/Barcode scan failure:', error)
+    }
+
+    // Add cleanup on unmount
+    onBeforeUnmount(() => {
+      stopBarcodeScanner()
+      stopScanner()
+      // Remove event listeners
+      document.removeEventListener('click', handleClickOutside)
+    })
+
+    // Add these new refs
+    const installmentPlanSearch = ref('')
+    const showInstallmentPlanDropdown = ref(false)
+    const installmentPlans = ref([])
+
+    // Add computed property for filtered plans
+    const filteredInstallmentPlans = computed(() => {
+      let plans = installmentPlans.value
+
+      // Filter by search term if present
+      if (installmentPlanSearch.value) {
+        const searchTerm = installmentPlanSearch.value.toLowerCase()
+        plans = plans.filter(
+          (plan) =>
+            plan.plan_name.toLowerCase().includes(searchTerm) ||
+            plan.Product_name.toLowerCase().includes(searchTerm) ||
+            plan.Product_model.toLowerCase().includes(searchTerm),
+        )
+      }
+
+      // Filter by item name or model if present
+      if (formData.value.item_name || formData.value.model) {
+        plans = plans.filter((plan) => {
+          const itemNameMatch = formData.value.item_name
+            ? plan.Product_name.toLowerCase().includes(formData.value.item_name.toLowerCase())
+            : true
+          const modelMatch = formData.value.model
+            ? plan.Product_model.toLowerCase().includes(formData.value.model.toLowerCase())
+            : true
+          return itemNameMatch || modelMatch
+        })
+      }
+
+      return plans
+    })
+
+    // Add handler for item/model changes
+    const handleItemOrModelChange = () => {
+      // Reset installment plan if changed
+      formData.value.installment_plan_id = ''
+
+      // Show dropdown with filtered results
+      showInstallmentPlanDropdown.value = true
+
+      // If there's exactly one matching plan, select it automatically
+      if (filteredInstallmentPlans.value.length === 1) {
+        selectInstallmentPlan(filteredInstallmentPlans.value[0])
+      }
+    }
+
+    // Add watchers for item_name and model
+    watch(
+      () => formData.value.item_name,
+      (newVal) => {
+        if (!newVal) {
+          handleItemOrModelChange()
+        }
+      },
+    )
+
+    watch(
+      () => formData.value.model,
+      (newVal) => {
+        if (!newVal) {
+          handleItemOrModelChange()
+        }
+      },
+    )
+
+    // Add computed property for selected plan display
+    const selectedPlan = computed(() => {
+      const plan = installmentPlans.value.find((p) => p.id === formData.value.installment_plan_id)
+      if (plan) {
+        return `${plan.plan_name} - ${plan.Product_name} (${plan.Product_model})`
+      }
+      return ''
+    })
+
+    // Update selectInstallmentPlan method
+    const selectInstallmentPlan = (plan) => {
+      formData.value.installment_plan_id = plan.id
+      installmentPlanSearch.value = `${plan.plan_name} - ${plan.Product_name} (${plan.Product_model})`
+      showInstallmentPlanDropdown.value = false
+    }
+
+    // Add method to fetch installment plans
+    const fetchInstallmentPlans = async () => {
+      try {
+        const result = await store.dispatch('installmentPlanStore/getAllInstallmentPlans')
+        if (result.success) {
+          installmentPlans.value = result.plans || []
+        } else {
+          console.error('Failed to load installment plans:', result.message)
+        }
+      } catch (error) {
+        console.error('Error in fetchInstallmentPlans:', error)
+      }
+    }
+
+    // Define click outside handler
+    const handleClickOutside = (e) => {
+      const dropdown = document.querySelector('.search-select-container')
+      if (dropdown && !dropdown.contains(e.target)) {
+        showInstallmentPlanDropdown.value = false
+      }
+    }
+
+    // Update onMounted to add event listener
+    onMounted(() => {
+      fetchInstallmentPlans()
+      modal.value = new Modal(document.getElementById('scannerModal'))
+      imagePreviewModal.value = new Modal(document.getElementById('imagePreviewModal'))
+      barcodeModal.value = new Modal(document.getElementById('barcodeModal'))
+      // Add click outside listener
+      document.addEventListener('click', handleClickOutside)
+    })
+
     return {
+      installmentPlanSearch,
+      showInstallmentPlanDropdown,
+      filteredInstallmentPlans,
+      selectInstallmentPlan,
+      selectedPlan,
       formData,
       loading,
       showSuccess,
@@ -1679,26 +2098,29 @@ export default {
       isAdminOrCompanyAdmin,
       companies,
       branches,
-      captureImage,
-      processOCR,
-      stopScanner,
-      openCameraModal,
-      videoElement,
-      isModalVisible,
-      getImagePreviewUrl,
-      removeImage,
-      processCanvas,
-      displayCanvas,
-      isCardDetected,
-      isProcessing,
-      currentImageType,
-      isOcrEnabled,
-      detectedValues,
-      showCardGuide,
-      getGuideText,
-      selectedImageUrl,
-      openImagePreview,
+      handleItemOrModelChange,
+      startScanner,
+      stopBarcodeScanner,
       closeImagePreview,
+      openImagePreview,
+      selectedImageUrl,
+      getGuideText,
+      showCardGuide,
+      detectedValues,
+      isOcrEnabled,
+      currentImageType,
+      isProcessing,
+      isCardDetected,
+      displayCanvas,
+      processCanvas,
+      removeImage,
+      getImagePreviewUrl,
+      isModalVisible,
+      videoElement,
+      openCameraModal,
+      stopScanner,
+      processOCR,
+      captureImage,
     }
   },
 }

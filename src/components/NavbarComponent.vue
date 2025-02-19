@@ -19,14 +19,45 @@
 
       <!-- Desktop Logo (Left side) -->
       <a class="navbar-brand d-none d-lg-block" href="#">
-    <!-- Use dynamic binding for the logo image -->
-    <img class="logo" :src="companyLogo" alt="company logo" />
-  </a>
-
+        <!-- Use dynamic binding for the logo image -->
+        <img class="logo" :src="companyLogo" alt="company logo" />
+      </a>
 
       <!-- Desktop & Tablet View - Navbar Links -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
+          <!-- Add this new Customer Dropdown section before the existing dropdowns -->
+          <li
+            class="nav-item dropdown"
+            @mouseenter="openDropdown('customerDropdown')"
+            @mouseleave="closeDropdown('customerDropdown')"
+          >
+            <a class="nav-link" href="#" id="customerDropdown" role="button">
+              <i class="fas fa-users me-2"></i> Customer
+            </a>
+            <ul class="dropdown-menu" :class="{ show: isOpen.customerDropdown }">
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addCustomerDropdown')"
+                @mouseleave="closeDropdown('addCustomerDropdown')"
+              >
+                <router-link to="/dashboard/add-customer" class="dropdown-item">
+                  <i class="fas fa-user-plus me-2"></i> Add Customer
+                </router-link>
+              </li>
+
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewCustomerDropdown')"
+                @mouseleave="closeDropdown('viewCustomerDropdown')"
+              >
+                <router-link to="/dashboard/view-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> View Customers
+                </router-link>
+              </li>
+            </ul>
+          </li>
+
           <li
             v-if="isAdminOrBranchAdmin"
             class="nav-item dropdown"
@@ -230,7 +261,7 @@ export default {
 
     companyLogo() {
       return this.$store.getters.getUserCompanyLogo
-    }
+    },
   },
   setup() {
     const store = useStore()
@@ -263,13 +294,16 @@ export default {
     }
 
     onMounted(() => {
-      store.dispatch('getSingleCompany').then(response => {
-        if (response && response.data && response.data.company) {
-          store.commit('setUserCompanyLogo', response.data.company.logo);
-        }
-      }).catch(error => {
-        console.error('Error fetching company data:', error);
-      });
+      store
+        .dispatch('getSingleCompany')
+        .then((response) => {
+          if (response && response.data && response.data.company) {
+            store.commit('setUserCompanyLogo', response.data.company.logo)
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching company data:', error)
+        })
     })
 
     return {
