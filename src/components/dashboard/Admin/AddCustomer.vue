@@ -473,7 +473,10 @@
             <div
               v-if="showCardGuide"
               class="card-guide"
-              :class="{ 'passport-guide': currentImageType === 'customer_image' }"
+              :class="{
+                'passport-guide': currentImageType === 'customer_image',
+                'check-guide': currentImageType === 'check_image',
+              }"
             >
               <div class="corner-tl"></div>
               <div class="corner-tr"></div>
@@ -1211,6 +1214,14 @@ select option {
   transform: translate(-50%, -50%);
 }
 
+/* Add check guide specific styles */
+.check-guide {
+  width: 90% !important; /* Wider for checks */
+  height: 45% !important; /* Shorter height for checks */
+  border: 2px solid rgba(0, 255, 0, 0.7);
+  background: transparent;
+}
+
 /* Add these new styles for full image preview */
 .image-preview-container img {
   cursor: pointer;
@@ -1597,7 +1608,9 @@ export default {
 
     const currentImageType = ref(null)
     const showCardGuide = computed(() =>
-      ['cnic_front_image', 'cnic_back_image', 'customer_image'].includes(currentImageType.value),
+      ['cnic_front_image', 'cnic_back_image', 'customer_image', 'check_image'].includes(
+        currentImageType.value,
+      ),
     )
 
     const getGuideText = computed(() => {
@@ -1607,6 +1620,8 @@ export default {
         case 'cnic_front_image':
         case 'cnic_back_image':
           return 'Align ID card within the frame'
+        case 'check_image':
+          return 'Align check within the frame'
         default:
           return 'Position subject in frame'
       }
@@ -1617,17 +1632,19 @@ export default {
     // Modified openCameraModal to handle different image types
     const openCameraModal = async (imageType) => {
       try {
-        // Reset detected values
-        detectedValues.value = {
-          name: false,
-          fatherName: false,
-          cnic: false,
+        // Reset detected values if it's CNIC front
+        if (imageType === 'cnic_front_image') {
+          detectedValues.value = {
+            name: false,
+            fatherName: false,
+            cnic: false,
+          }
         }
 
         currentImageType.value = imageType
 
-        // Only initialize OCR worker for CNIC images
-        if (isOcrEnabled.value) {
+        // Only initialize OCR worker for CNIC front image
+        if (imageType === 'cnic_front_image') {
           await initWorker()
         }
 
@@ -1641,8 +1658,8 @@ export default {
         })
         videoElement.value.srcObject = stream
 
-        // Only start OCR processing for CNIC images
-        if (isOcrEnabled.value) {
+        // Only start OCR processing for CNIC front image
+        if (imageType === 'cnic_front_image') {
           const processInterval = setInterval(processVideoFrame, 1000)
           videoElement.value.dataset.processInterval = processInterval
         }
@@ -1696,13 +1713,15 @@ export default {
       const cropWidth = guideRect.width * scaleX
       const cropHeight = guideRect.height * scaleY
 
-      // Set canvas dimensions based on image type
-      if (currentImageType.value === 'customer_image') {
+      if (currentImageType.value === 'check_image') {
+        canvas.width = 1280
+        canvas.height = 720
+      } else if (currentImageType.value === 'customer_image') {
         canvas.width = 708
         canvas.height = 590
       } else {
-        canvas.width = 856 // 85.6mm at 300 DPI
-        canvas.height = 540 // 54mm at 300 DPI
+        canvas.width = 856
+        canvas.height = 540
       }
 
       const ctx = canvas.getContext('2d')
@@ -1722,6 +1741,13 @@ export default {
             processOCR(blob)
           }
           stopScanner()
+
+          // Show success message
+          showSuccess.value = true
+          successMessage.value = 'Image captured successfully!'
+          setTimeout(() => {
+            showSuccess.value = false
+          }, 2000)
         },
         'image/jpeg',
         0.95, // High quality for all images
@@ -2348,3 +2374,4 @@ export default {
   },
 }
 </script>
+```
