@@ -256,16 +256,31 @@
             </div>
           </div>
 
-          <!-- Address and Office Address -->
+          <!-- Address with Location Button -->
           <div class="mb-3 inputs position-relative">
-            <textarea
-              id="address"
-              v-model="formData.address"
-              class="form-control border-0"
-              required
-              placeholder=" "
-            ></textarea>
-            <label for="address" class="form-label">Address</label>
+            <div class="d-flex align-items-start gap-2">
+              <div class="flex-grow-1">
+                <textarea
+                  id="address"
+                  v-model="formData.address"
+                  class="form-control border-0"
+                  required
+                  placeholder=" "
+                ></textarea>
+                <label for="address" class="form-label">Address</label>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-primary location-btn"
+                @click="getCurrentLocation"
+                :disabled="isLoadingLocation"
+              >
+                <i
+                  :class="isLoadingLocation ? 'fas fa-spinner fa-spin' : 'fas fa-map-marker-alt'"
+                ></i>
+                {{ isLoadingLocation ? 'Getting Location...' : 'Get Location' }}
+              </button>
+            </div>
           </div>
 
           <!-- Employment Type and Company Name -->
@@ -299,14 +314,29 @@
             </div>
           </div>
           <div class="mb-3 inputs position-relative">
-            <textarea
-              id="office_address"
-              v-model="formData.office_address"
-              class="form-control border-0"
-              required
-              placeholder=" "
-            ></textarea>
-            <label for="office_address" class="form-label">Office Address</label>
+            <div class="d-flex align-items-start gap-2">
+              <div class="flex-grow-1">
+                <textarea
+                  id="office_address"
+                  v-model="formData.office_address"
+                  class="form-control border-0"
+                  required
+                  placeholder=" "
+                ></textarea>
+                <label for="office_address" class="form-label">Office Address</label>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-primary location-btn"
+                @click="getCurrentOfficeLocation"
+                :disabled="isLoadingLocation"
+              >
+                <i
+                  :class="isLoadingLocation ? 'fas fa-spinner fa-spin' : 'fas fa-map-marker-alt'"
+                ></i>
+                {{ isLoadingLocation ? 'Getting Location...' : 'Get Location' }}
+              </button>
+            </div>
           </div>
           <!-- Years of Experience -->
           <div class="mb-3 inputs position-relative">
@@ -1340,6 +1370,69 @@ select.form-control option {
   padding: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
+.location-btn {
+  min-width: 130px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #3a0ca3, #4361ee);
+  color: white;
+  border: none;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 13px;
+  box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+  margin-right: 10px;
+}
+
+.location-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.location-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+  background: linear-gradient(135deg, #4361ee, #3a0ca3);
+}
+
+.location-btn:not(:disabled):hover::before {
+  left: 100%;
+}
+
+.location-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.location-btn i {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .location-btn {
+    min-width: auto;
+    padding: 8px;
+  }
+
+  .location-btn span {
+    display: none;
+  }
+}
 </style>
 
 <script>
@@ -2077,50 +2170,180 @@ export default {
       document.addEventListener('click', handleClickOutside)
     })
 
+    const isLoadingLocation = ref(false)
+
+    const getCurrentLocation = async () => {
+      if (!navigator.geolocation) {
+        showError.value = true
+        errorMessage.value = 'Geolocation is not supported by your browser'
+        return
+      }
+
+      try {
+        isLoadingLocation.value = true
+
+        // Get current position
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject)
+        })
+
+        const { latitude, longitude } = position.coords
+
+        // Use reverse geocoding with Nominatim API (OpenStreetMap)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        )
+        const data = await response.json()
+
+        const addressComponents = data.address
+
+        const address = [
+          addressComponents.road,
+          addressComponents.neighbourhood,
+          addressComponents.suburb,
+          addressComponents.village,
+          addressComponents.town || addressComponents.city,
+          addressComponents.county,
+          addressComponents.state,
+          addressComponents.country,
+        ]
+          .filter(Boolean)
+          .join(', ')
+
+        formData.value.address = address
+
+        showSuccess.value = true
+        successMessage.value = 'Location fetched successfully!'
+
+        setTimeout(() => {
+          showSuccess.value = false
+        }, 3000)
+      } catch (error) {
+        console.error('Error getting location:', error)
+        showError.value = true
+        errorMessage.value = 'Unable to fetch your location. Please try again or enter manually.'
+      } finally {
+        isLoadingLocation.value = false
+      }
+    }
+
+    const getCurrentOfficeLocation = async () => {
+      if (!navigator.geolocation) {
+        showError.value = true
+        errorMessage.value = 'Geolocation is not supported by your browser'
+        return
+      }
+
+      try {
+        isLoadingLocation.value = true
+
+        // Get current position
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject)
+        })
+
+        const { latitude, longitude } = position.coords
+
+        // Use reverse geocoding with Nominatim API (OpenStreetMap)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        )
+        const data = await response.json()
+
+        const addressComponents = data.address
+
+        const address = [
+          addressComponents.road,
+          addressComponents.neighbourhood,
+          addressComponents.suburb,
+          addressComponents.village,
+          addressComponents.town || addressComponents.city,
+          addressComponents.county,
+          addressComponents.state,
+          addressComponents.country,
+        ]
+          .filter(Boolean)
+          .join(', ')
+
+        formData.value.office_address = address
+
+        showSuccess.value = true
+        successMessage.value = 'Office location fetched successfully!'
+
+        setTimeout(() => {
+          showSuccess.value = false
+        }, 3000)
+      } catch (error) {
+        console.error('Error getting location:', error)
+        showError.value = true
+        errorMessage.value = 'Unable to fetch your location. Please try again or enter manually.'
+      } finally {
+        isLoadingLocation.value = false
+      }
+    }
+
     return {
-      installmentPlanSearch,
-      showInstallmentPlanDropdown,
-      filteredInstallmentPlans,
-      selectInstallmentPlan,
-      selectedPlan,
-      formData,
       loading,
       showSuccess,
       showError,
       successMessage,
       errorMessage,
       validationErrors,
-      handleFileUpload,
-      submitForm,
-      resetForm,
       currentUserRole,
-      isAdmin,
-      isAdminOrCompanyAdmin,
       companies,
       branches,
-      handleItemOrModelChange,
+      formData,
+      modal,
+      videoElement,
+      isModalVisible,
+      processCanvas,
+      displayCanvas,
+      isCardDetected,
+      worker,
+      isProcessing,
+      lastProcessedTime,
+      PROCESS_INTERVAL,
+      detectedValues,
+      initWorker,
+      processVideoFrame,
+      currentImageType,
+      showCardGuide,
+      getGuideText,
+      isOcrEnabled,
+      openCameraModal,
+      captureImage,
+      stopScanner,
+      submitForm,
+      resetForm,
+      userRole,
+      isAdmin,
+      isAdminOrCompanyAdmin,
+      handleFileUpload,
+      processOCR,
+      getImagePreviewUrl,
+      removeImage,
+      imagePreviewModal,
+      selectedImageUrl,
+      openImagePreview,
+      closeImagePreview,
+      barcodeModal,
+      html5QrCode,
       startScanner,
       stopBarcodeScanner,
-      closeImagePreview,
-      openImagePreview,
-      selectedImageUrl,
-      getGuideText,
-      showCardGuide,
-      detectedValues,
-      isOcrEnabled,
-      currentImageType,
-      isProcessing,
-      isCardDetected,
-      displayCanvas,
-      processCanvas,
-      removeImage,
-      getImagePreviewUrl,
-      isModalVisible,
-      videoElement,
-      openCameraModal,
-      stopScanner,
-      processOCR,
-      captureImage,
+      onScanSuccess,
+      onScanFailure,
+      installmentPlanSearch,
+      showInstallmentPlanDropdown,
+      installmentPlans,
+      filteredInstallmentPlans,
+      handleItemOrModelChange,
+      selectedPlan,
+      selectInstallmentPlan,
+      fetchInstallmentPlans,
+      getCurrentLocation,
+      isLoadingLocation,
+      handleClickOutside,
+      getCurrentOfficeLocation,
     }
   },
 }
