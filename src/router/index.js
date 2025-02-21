@@ -74,6 +74,12 @@ const routes = [
         component: () => import('@/components/dashboard/Admin/InstallmentPlanView.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
       },
+      {
+        path: '/dashboard/add-customer',
+        name: 'AddCustomer',
+        component: () => import('@/components/dashboard/Admin/AddCustomer.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
     ],
   },
   {
