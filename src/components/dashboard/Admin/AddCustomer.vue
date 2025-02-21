@@ -57,7 +57,7 @@
         <form @submit.prevent="submitForm">
           <!-- File Uploads -->
           <div class="mb-3 d-flex justify-content-between">
-            <div class="inputs position-relative w-48">
+            <div class="inputs position-relative w-48" :class="getInputClass('cnic_front_image')">
               <div v-if="formData.cnic_front_image" class="image-preview-container">
                 <img
                   :src="getImagePreviewUrl(formData.cnic_front_image)"
@@ -91,7 +91,7 @@
               </div>
               <label for="cnic_front_image" class="form-label notwrok">CNIC Front Image</label>
             </div>
-            <div class="inputs position-relative w-48">
+            <div class="inputs position-relative w-48" :class="getInputClass('cnic_back_image')">
               <div v-if="formData.cnic_back_image" class="image-preview-container">
                 <img
                   :src="getImagePreviewUrl(formData.cnic_back_image)"
@@ -128,7 +128,7 @@
           </div>
 
           <div class="mb-3 d-flex justify-content-between">
-            <div class="inputs position-relative w-48">
+            <div class="inputs position-relative w-48" :class="getInputClass('customer_image')">
               <div v-if="formData.customer_image" class="image-preview-container">
                 <img
                   :src="getImagePreviewUrl(formData.customer_image)"
@@ -162,7 +162,7 @@
               </div>
               <label for="customer_image" class="form-label notwrok">Customer Image</label>
             </div>
-            <div class="inputs position-relative w-48">
+            <div class="inputs position-relative w-48" :class="getInputClass('check_image')">
               <div v-if="formData.check_image" class="image-preview-container">
                 <img
                   :src="getImagePreviewUrl(formData.check_image)"
@@ -1486,6 +1486,7 @@ export default {
       cnic_front_image: null,
       customer_image: null,
       check_image: null,
+      
       cnic_back_image: null,
       item_name: '',
       model: '',
@@ -1804,25 +1805,30 @@ export default {
     const submitForm = async () => {
       try {
         loading.value = true
-        errorMessage.value = ''
         validationErrors.value = {}
         showSuccess.value = false
         showError.value = false
+        errorMessage.value = ''
 
-        const result = await store.dispatch('registerCustomer', formData.value)
+        const result = await store.dispatch('customerStore/registerCustomer', formData.value)
 
         if (result.success) {
           showSuccess.value = true
-          successMessage.value = 'Customer registered successfully!'
+          successMessage.value = result.message
           resetForm()
         } else {
+          showError.value = true
+          errorMessage.value = result.message
+
+          // Handle validation errors
           if (result.errors) {
             validationErrors.value = result.errors
-            showError.value = true
-            errorMessage.value = 'Please correct the errors below.'
-          } else {
-            showError.value = true
-            errorMessage.value = result.message || 'Registration failed'
+            // Format validation messages for display
+            Object.keys(result.errors).forEach((key) => {
+              result.errors[key] = Array.isArray(result.errors[key])
+                ? result.errors[key]
+                : [result.errors[key]]
+            })
           }
         }
       } catch (error) {
@@ -2308,6 +2314,13 @@ export default {
       }
     }
 
+    // Add validation styles for file inputs
+    const getInputClass = (fieldName) => {
+      return {
+        'error-border': validationErrors.value[fieldName]?.length > 0,
+      }
+    }
+
     return {
       loading,
       showSuccess,
@@ -2370,8 +2383,8 @@ export default {
       isLoadingLocation,
       handleClickOutside,
       getCurrentOfficeLocation,
+      getInputClass, // Add this to the return object
     }
   },
 }
 </script>
-```

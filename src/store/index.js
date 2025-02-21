@@ -2,12 +2,17 @@ import { createStore } from 'vuex'
 import AuthApiServices from '@/services/AuthApiServices' // Ensure this path is correct
 import router from '@/router' // Add this import at the top
 import installmentPlanStore from './InstallmentPlanStore'
+import CustomerStore from './CustomerStore'
 
 export default createStore({
   modules: {
     installmentPlanStore: {
       namespaced: true,
       ...installmentPlanStore,
+    },
+    customerStore: {
+      namespaced: true,
+      ...CustomerStore,
     },
   },
   state: {
