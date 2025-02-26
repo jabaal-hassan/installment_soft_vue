@@ -19,7 +19,7 @@ const routes = [
   },
   {
     path: '/dashboard',
-    name: 'dashboard',
+    name: 'home',
     component: DashboardView,
     meta: { requiresAuth: true },
     children: [
@@ -78,6 +78,12 @@ const routes = [
         path: '/dashboard/add-customer',
         name: 'AddCustomer',
         component: () => import('@/components/dashboard/Admin/AddCustomer.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
+      {
+        path: '/dashboard/add-guarantor',
+        name: 'AddGuarantor',
+        component: () => import('@/components/dashboard/Admin/AddGuarantor.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
       },
     ],

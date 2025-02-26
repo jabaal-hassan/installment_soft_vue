@@ -75,9 +75,102 @@ const actions = {
     } catch (error) {
       console.error('Registration error:', error)
 
+      if (error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response.data.message,
+          errors: error.response?.data?.errors || {},
+        }
+      }
+
       return {
         success: false,
         message: error.message || 'Error registering customer',
+        errors: error.response?.data?.errors || {},
+      }
+    } finally {
+      commit('SET_REGISTRATION_LOADING', false)
+    }
+  },
+
+  async registerGuarantor({ commit }, guarantorData) {
+    commit('SET_REGISTRATION_LOADING', true)
+    commit('SET_REGISTRATION_ERROR', null)
+
+    try {
+      const formData = new FormData()
+
+      // Fix the casing for CNIC image field names
+      const fieldMappings = {
+        cnic_front_image: 'cnic_Front_image',
+        cnic_back_image: 'cnic_Back_image',
+      }
+
+      // Append all guarantor data to FormData with corrected field names
+      Object.keys(guarantorData).forEach((key) => {
+        const apiFieldName = fieldMappings[key] || key
+
+        if (Object.keys(fieldMappings).includes(key) && guarantorData[key]) {
+          // Handle file/blob data
+          if (guarantorData[key] instanceof File || guarantorData[key] instanceof Blob) {
+            const filename = guarantorData[key].name || `${apiFieldName}_${Date.now()}.jpg`
+            formData.append(apiFieldName, guarantorData[key], filename)
+          }
+        } else if (guarantorData[key] !== null && guarantorData[key] !== undefined) {
+          // Handle other fields
+          formData.append(apiFieldName, guarantorData[key])
+        }
+      })
+
+      const response = await AuthApiServices.PostRequest('/add-guarantor', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      // Check if guarantor limit exceeded
+      if (response.message === 'Guarantor can only provide two guarantees') {
+        return {
+          success: false,
+          message: response.message,
+          errors: {},
+        }
+      }
+
+      // Handle validation errors from API
+      if (response.message === 'Validation failed' && response.errors) {
+        return {
+          success: false,
+          message: 'Please correct the validation errors',
+          errors: response.errors,
+        }
+      }
+
+      // Check for successful response
+      if (response.message === 'Guarantor added successfully') {
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        }
+      }
+
+      // If we get here, it's an error response
+      throw new Error(response.message || 'Failed to add guarantor')
+    } catch (error) {
+      console.error('Guarantor registration error:', error)
+
+      if (error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response.data.message,
+          errors: error.response?.data?.errors || {},
+        }
+      }
+
+      return {
+        success: false,
+        message: error.message || 'Error registering guarantor',
         errors: error.response?.data?.errors || {},
       }
     } finally {
