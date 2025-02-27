@@ -142,11 +142,12 @@
               <input
                 type="text"
                 id="cnic"
-                v-model="formData.cnic"
+                v-model="formattedCnic"
                 class="form-control border-0"
                 required
                 placeholder=" "
                 :class="{ 'error-border': validationErrors.cnic }"
+                maxlength="15"
               />
               <label for="cnic" class="form-label">CNIC</label>
             </div>
@@ -1350,6 +1351,19 @@ export default {
       worker.value = await createWorker('eng')
     }
 
+    const formattedCnic = computed({
+      get() {
+        const cnic = formData.value.cnic
+        if (cnic.length > 5) {
+          return `${cnic.slice(0, 5)}-${cnic.slice(5, 12)}${cnic.length > 12 ? '-' + cnic.slice(12) : ''}`
+        }
+        return cnic
+      },
+      set(newValue) {
+        formData.value.cnic = newValue.replace(/-/g, '')
+      },
+    })
+
     // Process frame in real-time
     const processVideoFrame = async () => {
       if (!videoElement.value || isProcessing.value) return
@@ -1639,7 +1653,12 @@ export default {
         showError.value = false
         errorMessage.value = ''
 
-        const result = await store.dispatch('customerStore/registerGuarantor', formData.value)
+        const payload = {
+          ...formData.value,
+          cnic: formattedCnic.value,
+        }
+
+        const result = await store.dispatch('customerStore/registerGuarantor', payload)
 
         if (result.success) {
           showSuccess.value = true
@@ -2108,7 +2127,8 @@ export default {
       isLoadingLocation,
       handleClickOutside,
       getCurrentOfficeLocation,
-      getInputClass, // Add this to the return object
+      getInputClass,
+      formattedCnic,
     }
   },
 }

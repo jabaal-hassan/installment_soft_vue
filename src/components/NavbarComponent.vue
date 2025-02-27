@@ -49,7 +49,7 @@
                 @mouseenter="openDropdown('addGuarantorDropdown')"
                 @mouseleave="closeDropdown('addGuarantorDropdown')"
               >
-                <router-link to="/dashboard/add-guarantor" class="dropdown-item">
+                <router-link to="/dashboard/customer-without-guarantor" class="dropdown-item">
                   <i class="fas fa-users-viewfinder me-2"></i> Add Guarantor
                 </router-link>
               </li>

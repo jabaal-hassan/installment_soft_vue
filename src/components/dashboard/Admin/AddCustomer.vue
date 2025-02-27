@@ -234,11 +234,12 @@
               <input
                 type="text"
                 id="cnic"
-                v-model="formData.cnic"
+                v-model="formattedCnic"
                 class="form-control border-0"
                 required
                 placeholder=" "
                 :class="{ 'error-border': validationErrors.cnic }"
+                maxlength="15"
               />
               <label for="cnic" class="form-label">CNIC</label>
             </div>
@@ -1519,6 +1520,19 @@ export default {
     const initWorker = async () => {
       worker.value = await createWorker('eng')
     }
+    // Computed property to format CNIC
+    const formattedCnic = computed({
+      get() {
+        const cnic = formData.value.cnic
+        if (cnic.length > 5) {
+          return `${cnic.slice(0, 5)}-${cnic.slice(5, 12)}${cnic.length > 12 ? '-' + cnic.slice(12) : ''}`
+        }
+        return cnic
+      },
+      set(newValue) {
+        formData.value.cnic = newValue.replace(/-/g, '')
+      },
+    })
 
     // Process frame in real-time
     const processVideoFrame = async () => {
@@ -1812,15 +1826,18 @@ export default {
         showError.value = false
         errorMessage.value = ''
 
-        const result = await store.dispatch('customerStore/registerCustomer', formData.value)
+        const payload = {
+          ...formData.value,
+          cnic: formattedCnic.value,
+        }
+
+        const result = await store.dispatch('customerStore/registerCustomer', payload)
 
         if (result.success) {
           showSuccess.value = true
           successMessage.value = result.message
-          // Get customer ID from the response data
           const customerId = result.data.customer.id
           resetForm()
-          // Redirect to AddGuarantor with customer ID
           router.push({
             name: 'AddGuarantor',
             query: { customer_id: customerId },
@@ -2392,7 +2409,8 @@ export default {
       isLoadingLocation,
       handleClickOutside,
       getCurrentOfficeLocation,
-      getInputClass, // Add this to the return object
+      getInputClass,
+      formattedCnic,
     }
   },
 }

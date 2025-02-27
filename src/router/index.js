@@ -86,6 +86,12 @@ const routes = [
         component: () => import('@/components/dashboard/Admin/AddGuarantor.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
       },
+      {
+        path: '/dashboard/customer-without-guarantor',
+        name: 'CustomerWithoutGuarantor',
+        component: () => import('@/components/dashboard/Admin/CustomerWithoutGuarantorView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
     ],
   },
   {

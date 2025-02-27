@@ -9,7 +9,6 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 
-
 const store = useStore()
 const userRole = computed(() => store.getters.getUserRole)
 
@@ -18,7 +17,8 @@ const isAdminOrBranchAdmin = computed(() => {
   return (
     userRole.value === 'company admin' ||
     userRole.value === 'branch admin' ||
-    userRole.value === 'admin'
+    userRole.value === 'admin' ||
+    userRole.value === 'employee'
   )
 })
 </script>

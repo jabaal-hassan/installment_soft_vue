@@ -3,6 +3,9 @@ import AuthApiServices from '@/services/AuthApiServices'
 const state = {
   registrationLoading: false,
   registrationError: null,
+  customersLoading: false,
+  customersError: null,
+  customersWithoutGuarantors: [],
 }
 
 const mutations = {
@@ -12,9 +15,19 @@ const mutations = {
   SET_REGISTRATION_ERROR(state, error) {
     state.registrationError = error
   },
+  SET_CUSTOMERS_LOADING(state, status) {
+    state.customersLoading = status
+  },
+  SET_CUSTOMERS_ERROR(state, error) {
+    state.customersError = error
+  },
+  SET_CUSTOMERS_WITHOUT_GUARANTORS(state, customers) {
+    state.customersWithoutGuarantors = customers
+  },
 }
 
 const actions = {
+
   async registerCustomer({ commit }, customerData) {
     commit('SET_REGISTRATION_LOADING', true)
     commit('SET_REGISTRATION_ERROR', null)
@@ -177,11 +190,44 @@ const actions = {
       commit('SET_REGISTRATION_LOADING', false)
     }
   },
+  // New action for getting customers without guarantors
+  async getCustomersWithoutGuarantors({ commit }) {
+    commit('SET_CUSTOMERS_LOADING', true)
+    commit('SET_CUSTOMERS_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.GetRequest('/get-customers-without-guarantors')
+
+      if (response.data && response.data.customers) {
+        commit('SET_CUSTOMERS_WITHOUT_GUARANTORS', response.data.customers)
+        return {
+          success: true,
+          message: response.message,
+          customers: response.data.customers,
+        }
+      }
+
+      throw new Error('Invalid response structure')
+    } catch (error) {
+      console.error('Error fetching customers without guarantors:', error)
+      commit('SET_CUSTOMERS_ERROR', error.message || 'Failed to fetch customers')
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+        customers: [],
+      }
+    } finally {
+      commit('SET_CUSTOMERS_LOADING', false)
+    }
+  },
 }
 
 const getters = {
   isRegistrationLoading: (state) => state.registrationLoading,
   registrationError: (state) => state.registrationError,
+  isCustomersLoading: (state) => state.customersLoading,
+  customersError: (state) => state.customersError,
+  customersWithoutGuarantors: (state) => state.customersWithoutGuarantors,
 }
 
 export default {
