@@ -9,7 +9,7 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 
-// Get the store and determine if the user is an admin
+
 const store = useStore()
 const userRole = computed(() => store.getters.getUserRole)
 

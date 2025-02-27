@@ -26,7 +26,6 @@
       <!-- Desktop & Tablet View - Navbar Links -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
-          <!-- Add this new Customer Dropdown section before the existing dropdowns -->
           <li
             class="nav-item dropdown"
             @mouseenter="openDropdown('customerDropdown')"
@@ -43,6 +42,15 @@
               >
                 <router-link to="/dashboard/add-customer" class="dropdown-item">
                   <i class="fas fa-user-plus me-2"></i> Add Customer
+                </router-link>
+              </li>
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addGuarantorDropdown')"
+                @mouseleave="closeDropdown('addGuarantorDropdown')"
+              >
+                <router-link to="/dashboard/add-guarantor" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Add Guarantor
                 </router-link>
               </li>
 

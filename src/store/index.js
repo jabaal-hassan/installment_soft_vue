@@ -176,8 +176,10 @@ export default createStore({
     },
 
     async handleTokenExpiration({ dispatch }) {
-      await dispatch('logoutUser')
-      router.push('/login')
+      if (router.currentRoute.value.path !== '/password-setup') {
+        await dispatch('logoutUser')
+        router.push('/login')
+      }
     },
 
     initializeStore({ commit, dispatch }) {
