@@ -50,7 +50,16 @@
                 @mouseleave="closeDropdown('addGuarantorDropdown')"
               >
                 <router-link to="/dashboard/customer-without-guarantor" class="dropdown-item">
-                  <i class="fas fa-users-viewfinder me-2"></i> Add Guarantor
+                  <i class="fas fa-user-plus me-2"></i> Add Guarantor
+                </router-link>
+              </li>
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('InquiryDropdown')"
+                @mouseleave="closeDropdown('InquiryDropdown')"
+              >
+                <router-link to="/dashboard/inquiry-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Inquiry Customers
                 </router-link>
               </li>
 
@@ -356,7 +365,8 @@ export default {
 }
 
 .logo {
-  width: 5em;
+  width: 50px;
+  height: 50px;
   transition: transform 0.3s ease;
 }
 

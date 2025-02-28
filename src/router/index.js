@@ -92,6 +92,12 @@ const routes = [
         component: () => import('@/components/dashboard/Admin/CustomerWithoutGuarantorView.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
       },
+      {
+        path: '/dashboard/inquiry-customers',
+        name: 'InquiryCustomers',
+        component: () => import('@/components/dashboard/Admin/InquiryCustomerView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
     ],
   },
   {
