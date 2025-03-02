@@ -36,6 +36,9 @@ const mutations = {
   SET_INQUIRY_CUSTOMERS(state, customers) {
     state.inquiryCustomers = customers
   },
+  SET_REJECTED_CUSTOMERS(state, customers) {
+    state.inquiryCustomers = customers
+  },
   UPDATE_CUSTOMER_STATUS(state, { id, status }) {
     const customer = state.customers.find((c) => c.id === id)
     if (customer) {
@@ -234,6 +237,7 @@ const actions = {
       commit('SET_CUSTOMERS_LOADING', false)
     }
   },
+
   /************************************ fetch inquiry Customer ************************************/
   async fetchInquiryCustomers({ commit }) {
     commit('SET_CUSTOMERS_LOADING', true)
@@ -254,6 +258,37 @@ const actions = {
       throw new Error('Invalid response structure')
     } catch (error) {
       console.error('Error fetching inquiry customers:', error)
+      commit('SET_CUSTOMERS_ERROR', error.message || 'Failed to fetch customers')
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+        customers: [],
+      }
+    } finally {
+      commit('SET_CUSTOMERS_LOADING', false)
+    }
+  },
+
+  /************************************ fetch inquiry Customer ************************************/
+  async fetchRejectedCustomers({ commit }) {
+    commit('SET_CUSTOMERS_LOADING', true)
+    commit('SET_CUSTOMERS_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.GetRequest('/get-rejected-customers')
+
+      if (response.data && response.data.customers) {
+        commit('SET_REJECTED_CUSTOMERS', response.data.customers) // Commit the mutation
+        return {
+          success: true,
+          message: response.message,
+          customers: response.data.customers,
+        }
+      }
+
+      throw new Error('Invalid response structure')
+    } catch (error) {
+      console.error('Error fetching rejected customers:', error)
       commit('SET_CUSTOMERS_ERROR', error.message || 'Failed to fetch customers')
       return {
         success: false,
@@ -287,6 +322,33 @@ const actions = {
       }
     } catch (error) {
       commit('SET_ERROR', error.message || 'Failed to update customer status')
+      return {
+        success: false,
+        message: error.message,
+      }
+    } finally {
+      commit('SET_LOADING', false)
+    }
+  },
+
+  /************************************ delete Customer ************************************/
+  async deleteCustomer({ commit }, customerId) {
+    commit('SET_LOADING', true)
+    commit('SET_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.DeleteRequest(`/delete-customer/${customerId}`)
+
+      if (response.message === 'Customer deleted successfully') {
+        return {
+          success: true,
+          message: response.message,
+        }
+      } else {
+        throw new Error(response.message || 'Failed to delete customer')
+      }
+    } catch (error) {
+      commit('SET_ERROR', error.message || 'Failed to delete customer')
       return {
         success: false,
         message: error.message,

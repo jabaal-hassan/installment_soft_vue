@@ -62,7 +62,15 @@
                   <i class="fas fa-users-viewfinder me-2"></i> Inquiry Customers
                 </router-link>
               </li>
-
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('RejectedDropdown')"
+                @mouseleave="closeDropdown('RejectedDropdown')"
+              >
+                <router-link to="/dashboard/rejected-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Rejected Customers
+                </router-link>
+              </li>
               <li
                 class="dropdown-submenu"
                 @mouseenter="openDropdown('viewCustomerDropdown')"

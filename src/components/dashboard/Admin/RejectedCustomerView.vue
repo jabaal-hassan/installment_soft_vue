@@ -7,7 +7,7 @@
         <div class="title-bar">
           <div class="title-wrapper">
             <i class="fas fa-users title-icon"></i>
-            <h2 class="section-title">Inquiry Customers</h2>
+            <h2 class="section-title">Rejected Customers</h2>
           </div>
         </div>
 
@@ -59,6 +59,7 @@
           <div class="header-cell">Customer Details</div>
           <div class="header-cell">Contact Info</div>
           <div class="header-cell">Sell Officer</div>
+          <div class="header-cell">Inquiry Officer</div>
           <div class="header-cell">Customer image</div>
           <div class="header-cell">Status & Actions</div>
         </div>
@@ -108,6 +109,27 @@
                 </div>
               </div>
             </div>
+            <!-- inquiry Officer Details -->
+            <div class="inquiry-officer-cell">
+              <div class="inquiry-officer-info">
+                <div class="inquiry-officer-item">
+                  <span class="inquiry-officer-label">Name:</span>
+                  <span class="inquiry-officer-value">{{ customer.inquiry_officer.name }}</span>
+                </div>
+                <div class="inquiry-officer-item">
+                  <span class="inquiry-officer-label">Father Name:</span>
+                  <span class="inquiry-officer-value">{{
+                    customer.inquiry_officer.father_name
+                  }}</span>
+                </div>
+                <div class="inquiry-officer-item">
+                  <span class="inquiry-officer-label">Phone:</span>
+                  <span class="inquiry-officer-value">{{
+                    customer.inquiry_officer.phone_number
+                  }}</span>
+                </div>
+              </div>
+            </div>
 
             <!-- Customer Image -->
             <div class="image-cell">
@@ -126,13 +148,9 @@
                   <i class="fas fa-check"></i>
                   <span>Confirm</span>
                 </button>
-                <button
-                  class="action-button reject"
-                  @click="handleReject(customer)"
-                  :disabled="customer.status === 'rejected'"
-                >
-                  <i class="fas fa-times"></i>
-                  <span>Reject</span>
+                <button class="action-button delete" @click="handleDelete(customer)">
+                  <i class="fas fa-trash"></i>
+                  <span>Delete</span>
                 </button>
               </div>
             </div>
@@ -208,14 +226,13 @@ const showError = ref(false)
 /************************************ fetch all data ************************************/
 
 const fetchAllData = async () => {
-  const response = await store.dispatch('customerStore/fetchInquiryCustomers')
+  const response = await store.dispatch('customerStore/fetchRejectedCustomers')
   if (response.success) {
     customers.value = response.customers
   } else {
     error.value = response.message
   }
 }
-
 /************************************ Handle Confirm Action ************************************/
 
 const handleConfirm = async (customer) => {
@@ -241,28 +258,34 @@ const handleConfirm = async (customer) => {
   }
 }
 
-/************************************ Handle Reject Action ************************************/
+/************************************ Handle delete Action ************************************/
+const handleDelete = async (customer) => {
+  const confirmDelete = confirm('Are you sure you want to delete this customer?')
+  if (!confirmDelete) return
 
-const handleReject = async (customer) => {
-  const result = await store.dispatch('customerStore/updateCustomerStatus', {
-    id: customer.id,
-    status: 'rejected',
-  })
+  try {
+    const response = await store.dispatch('customerStore/deleteCustomer', customer.id)
 
-  if (result.success) {
-    successMessage.value = 'Customer rejected successfully'
-    showSuccess.value = true
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 3000)
-    fetchAllData()
-  } else {
-    errorMessage.value = result.message || 'Failed to reject customer'
+    if (response.success) {
+      successMessage.value = response.message || 'Customer deleted successfully'
+      showSuccess.value = true
+      setTimeout(() => {
+        showSuccess.value = false
+      }, 3000)
+      fetchAllData()
+    } else {
+      errorMessage.value = response.message || 'Failed to delete customer'
+      showError.value = true
+      setTimeout(() => {
+        showError.value = false
+      }, 3000)
+    }
+  } catch (error) {
+    errorMessage.value = error.message || 'An error occurred while deleting the customer'
     showError.value = true
     setTimeout(() => {
       showError.value = false
     }, 3000)
-    fetchAllData()
   }
 }
 
@@ -385,7 +408,7 @@ onMounted(() => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.3fr 0.7fr;
+  grid-template-columns: 1.3fr 1.3fr 0.7fr 1fr 1.3fr 0.7fr;
   padding: 20px;
   background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
@@ -399,7 +422,7 @@ onMounted(() => {
 
 .table-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.3fr 1.3fr 0.7fr 1fr 1fr 1fr;
   padding: 20px;
   align-items: center;
   border-bottom: 1px solid #e9ecef;
@@ -454,18 +477,21 @@ onMounted(() => {
     background-position: 0% 50%;
   }
 }
-.sell-officer-item {
+.sell-officer-item,
+.inquiry-officer-item {
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-.sell-officer-label {
+.sell-officer-label,
+.inquiry-officer-label {
   font-size: 0.85rem;
   color: #6c757d;
 }
 
-.sell-officer-value {
+.sell-officer-value,
+.inquiry-officer-value {
   font-size: 0.9rem;
   color: #212529;
 }
@@ -474,7 +500,8 @@ onMounted(() => {
 .contact-cell,
 .image-cell,
 .actions-cell,
-.sell-officer-cell {
+.sell-officer-cell,
+.inquiry-officer-cell {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -482,7 +509,8 @@ onMounted(() => {
 
 .customer-info,
 .contact-info,
-.sell-officer-info {
+.sell-officer-info,
+.inquiry-officer-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -689,7 +717,7 @@ onMounted(() => {
     padding: 6px 12px;
     font-size: 0.8rem;
   }
-  .action-button.rejected {
+  .action-button.delete {
     padding: 6px 12px;
     font-size: 0.8rem;
   }
@@ -754,12 +782,12 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.action-button.reject {
+.action-button.delete {
   background: #ff4d4d;
   color: white;
 }
 
-.action-button.reject:disabled {
+.action-button.delete:disabled {
   background: #ffb3b3;
   cursor: not-allowed;
 }
