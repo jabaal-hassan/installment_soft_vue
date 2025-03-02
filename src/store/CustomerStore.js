@@ -9,6 +9,9 @@ const state = {
   customersLoading: false,
   customersError: null,
   customersWithoutGuarantors: [],
+  inquiryCustomers: [],
+  rejectedCustomers: [],
+  branchCustomers: [],
 }
 
 const mutations = {
@@ -37,7 +40,13 @@ const mutations = {
     state.inquiryCustomers = customers
   },
   SET_REJECTED_CUSTOMERS(state, customers) {
-    state.inquiryCustomers = customers
+    state.rejectedCustomers = customers
+  },
+  SET_BRANCH_CUSTOMERS(state, customers) {
+    state.branchCustomers = customers
+  },
+  SET_INQUIRY_OFFICERS(state, officers) {
+    state.inquiryOfficers = officers
   },
   UPDATE_CUSTOMER_STATUS(state, { id, status }) {
     const customer = state.customers.find((c) => c.id === id)
@@ -299,16 +308,57 @@ const actions = {
       commit('SET_CUSTOMERS_LOADING', false)
     }
   },
+  /************************************ fetch inquiry Customer ************************************/
+  async fetchBranchCustomers({ commit }) {
+    commit('SET_CUSTOMERS_LOADING', true)
+    commit('SET_CUSTOMERS_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.GetRequest('/get-branch-customers')
+
+      if (response.data && response.data.customers) {
+        commit('SET_BRANCH_CUSTOMERS', response.data.customers)
+        return {
+          success: true,
+          message: response.message,
+          customers: response.data.customers,
+        }
+      }
+
+      throw new Error('Invalid response structure')
+    } catch (error) {
+      console.error('Error fetching branch customers:', error)
+      commit('SET_CUSTOMERS_ERROR', error.message || 'Failed to fetch customers')
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+        customers: [],
+      }
+    } finally {
+      commit('SET_CUSTOMERS_LOADING', false)
+    }
+  },
 
   /************************************ update Customer status ************************************/
 
-  async updateCustomerStatus({ commit }, { id, status }) {
+  async updateCustomerStatus({ commit }, { id, status, inquiry_officer_id }) {
     commit('SET_LOADING', true)
     commit('SET_ERROR', null)
 
     try {
-      const response = await AuthApiServices.PostRequest(`/update-customer/${id}`, { status })
+      // Prepare the payload
+      const payload = {}
+      if (status) {
+        payload.status = status
+      }
+      if (inquiry_officer_id) {
+        payload.inquiry_officer_id = inquiry_officer_id
+      }
 
+      // Make the API request
+      const response = await AuthApiServices.PostRequest(`/update-customer/${id}`, payload)
+
+      // Handle the response
       if (response.message === 'Customer updated successfully') {
         return {
           success: true,
@@ -317,14 +367,24 @@ const actions = {
       } else {
         return {
           success: false,
-          message: response.message || 'Failed to delete installment plan',
+          message: response.message || 'Failed to update customer',
         }
       }
     } catch (error) {
       commit('SET_ERROR', error.message || 'Failed to update customer status')
+
+      if (error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response.data.message,
+          errors: error.response?.data?.errors || {},
+        }
+      }
+
       return {
         success: false,
-        message: error.message,
+        message: error.message || 'Error updating customer',
+        errors: error.response?.data?.errors || {},
       }
     } finally {
       commit('SET_LOADING', false)
@@ -349,6 +409,30 @@ const actions = {
       }
     } catch (error) {
       commit('SET_ERROR', error.message || 'Failed to delete customer')
+      return {
+        success: false,
+        message: error.message,
+      }
+    } finally {
+      commit('SET_LOADING', false)
+    }
+  },
+  async getInquiryOfficers({ commit }) {
+    commit('SET_LOADING', true)
+    commit('SET_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.GetRequest('/get-inquiry-officers')
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data,
+        }
+      } else {
+        throw new Error(response.message || 'Failed to fetch inquiry officers')
+      }
+    } catch (error) {
+      commit('SET_ERROR', error.message || 'Failed to fetch inquiry officers')
       return {
         success: false,
         message: error.message,

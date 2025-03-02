@@ -30,6 +30,15 @@
       </div>
     </div>
 
+    <!-- Success Message -->
+    <div v-if="showSuccess" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="showError" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
@@ -41,31 +50,28 @@
     <div v-else-if="error" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
-    <!-- Success Message -->
-    <div v-if="showSuccess" class="alert alert-success">
-      {{ successMessage }}
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="showError" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
 
     <!-- Customer List -->
     <div v-if="!loading && !error" class="customer-list">
       <div class="customer-table">
         <!-- Table Header -->
-        <div class="table-header">
+        <div class="table-header" :style="gridTemplateColumns">
           <div class="header-cell">Customer Details</div>
           <div class="header-cell">Contact Info</div>
           <div class="header-cell">Sell Officer</div>
           <div class="header-cell">Customer image</div>
+          <div v-if="isAdminOrBranchAdmin" class="header-cell">Inquiry Officer</div>
           <div class="header-cell">Status & Actions</div>
         </div>
 
         <!-- Table Body -->
         <div class="table-body">
-          <div v-for="customer in paginatedCustomers" :key="customer.id" class="table-row">
+          <div
+            v-for="customer in paginatedCustomers"
+            :key="customer.id"
+            class="table-row"
+            :style="gridTemplateColumns"
+          >
             <!-- Customer Details -->
             <div class="customer-cell">
               <div class="customer-info">
@@ -114,6 +120,29 @@
               <img :src="customer.customer_image" alt="Customer Image" class="customer-image" />
             </div>
 
+            <!-- Inquiry Officer Details -->
+            <div v-if="isAdminOrBranchAdmin">
+              <div class="inquiry-officer-cell">
+                <div class="inquiry-officer-info">
+                  <div class="inquiry-officer-item">
+                    <span class="inquiry-officer-label">Name:</span>
+                    <select
+                      v-model="customer.inquiry_officer_id"
+                      @change="handleChangeInquiryOfficer(customer.id, $event.target.value)"
+                    >
+                      <option
+                        v-for="officer in inquiryOfficers"
+                        :key="officer.id"
+                        :value="officer.employee_id"
+                        :selected="officer.employee_id === customer.inquiry_officer_id"
+                      >
+                        {{ officer.name }} ({{ officer.employee_id }})
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
             <!-- Status & Actions -->
             <div class="status-actions-cell">
               <span class="status-badge" :class="customer.status">{{ customer.status }}</span>
@@ -193,6 +222,7 @@ import { useStore } from 'vuex'
 
 const store = useStore()
 const customers = ref([])
+const inquiryOfficers = ref([])
 const loading = ref(true)
 const error = ref(null)
 const searchQuery = ref('')
@@ -205,14 +235,67 @@ const errorMessage = ref('')
 const showSuccess = ref(false)
 const showError = ref(false)
 
+const isAdminOrBranchAdmin = computed(() => {
+  const userRole = store.getters.getUserRole // Assuming you have a getter for the user's role
+  return userRole === 'admin' || userRole === 'branch admin'
+})
+const gridTemplateColumns = computed(() => {
+  if (isAdminOrBranchAdmin.value) {
+    return { 'grid-template-columns': '1.2fr 1fr 1fr 1fr 1.3fr 0.7fr' } // 6 columns
+  } else {
+    return { 'grid-template-columns': '1.2fr 1fr 1fr 1.3fr 0.7fr' } // 5 columns
+  }
+})
 /************************************ fetch all data ************************************/
 
 const fetchAllData = async () => {
-  const response = await store.dispatch('customerStore/fetchInquiryCustomers')
-  if (response.success) {
-    customers.value = response.customers
+  try {
+    loading.value = true
+    error.value = null
+
+    // Fetch customers
+    const response = await store.dispatch('customerStore/fetchInquiryCustomers')
+    if (response.success) {
+      customers.value = response.customers // Update the customers array
+    } else {
+      error.value = response.message
+    }
+
+    // Fetch inquiry officers
+    const inquiryOfficersResponse = await store.dispatch('customerStore/getInquiryOfficers')
+    if (inquiryOfficersResponse.success) {
+      inquiryOfficers.value = inquiryOfficersResponse.data
+    } else {
+      error.value = inquiryOfficersResponse.message
+    }
+  } catch (err) {
+    error.value = 'Failed to fetch data'
+    console.error('Error:', err)
+  } finally {
+    loading.value = false // Ensure loading is set to false
+  }
+}
+
+const handleChangeInquiryOfficer = async (customerId, employeeId) => {
+  const result = await store.dispatch('customerStore/updateCustomerStatus', {
+    id: customerId,
+    inquiry_officer_id: employeeId, // Pass the new inquiry officer ID
+  })
+
+  if (result.success) {
+    successMessage.value = result.message || 'Inquiry officer updated successfully'
+    showSuccess.value = true
+    setTimeout(() => {
+      showSuccess.value = false
+    }, 3000)
+    fetchAllData()
   } else {
-    error.value = response.message
+    errorMessage.value = result.message || 'Failed to update inquiry officer'
+    showError.value = true
+    setTimeout(() => {
+      showError.value = false
+    }, 3000)
+    fetchAllData()
   }
 }
 
@@ -385,7 +468,6 @@ onMounted(() => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.3fr 0.7fr;
   padding: 20px;
   background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
@@ -399,7 +481,6 @@ onMounted(() => {
 
 .table-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
   padding: 20px;
   align-items: center;
   border-bottom: 1px solid #e9ecef;
@@ -454,13 +535,15 @@ onMounted(() => {
     background-position: 0% 50%;
   }
 }
-.sell-officer-item {
+.sell-officer-item,
+.inquiry-officer-item {
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-.sell-officer-label {
+.sell-officer-label,
+.inquiry-officer-label {
   font-size: 0.85rem;
   color: #6c757d;
 }
@@ -468,6 +551,22 @@ onMounted(() => {
 .sell-officer-value {
   font-size: 0.9rem;
   color: #212529;
+}
+
+.inquiry-officer-cell select {
+  padding: 6px 30px;
+  border: 1px solid #d8cb10;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: white;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.inquiry-officer-cell select:focus {
+  border-color: #d8cb10;
+  box-shadow: 0 0 0 0.2rem rgba(206, 216, 16, 0.25);
+  z-index: 100;
 }
 
 .customer-cell,
@@ -482,7 +581,8 @@ onMounted(() => {
 
 .customer-info,
 .contact-info,
-.sell-officer-info {
+.sell-officer-info,
+.inquiry-officer-info {
   display: flex;
   flex-direction: column;
   gap: 4px;

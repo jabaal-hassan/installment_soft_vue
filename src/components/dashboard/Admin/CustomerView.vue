@@ -7,7 +7,7 @@
         <div class="title-bar">
           <div class="title-wrapper">
             <i class="fas fa-users title-icon"></i>
-            <h2 class="section-title">Rejected Customers</h2>
+            <h2 class="section-title">Customers</h2>
           </div>
         </div>
 
@@ -29,7 +29,6 @@
         </div>
       </div>
     </div>
-
     <!-- Success Message -->
     <div v-if="showSuccess" class="alert alert-success">
       {{ successMessage }}
@@ -227,66 +226,11 @@ const showError = ref(false)
 /************************************ fetch all data ************************************/
 
 const fetchAllData = async () => {
-  const response = await store.dispatch('customerStore/fetchRejectedCustomers')
+  const response = await store.dispatch('customerStore/fetchBranchCustomers')
   if (response.success) {
     customers.value = response.customers
   } else {
     error.value = response.message
-  }
-}
-/************************************ Handle Confirm Action ************************************/
-
-const handleConfirm = async (customer) => {
-  const result = await store.dispatch('customerStore/updateCustomerStatus', {
-    id: customer.id,
-    status: 'confirmed',
-  })
-
-  if (result.success) {
-    successMessage.value = 'Customer confirmed successfully'
-    showSuccess.value = true
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 3000)
-    fetchAllData()
-  } else {
-    errorMessage.value = result.message || 'Failed to confirm customer'
-    showError.value = true
-    setTimeout(() => {
-      showError.value = false
-    }, 3000)
-    fetchAllData()
-  }
-}
-
-/************************************ Handle delete Action ************************************/
-const handleDelete = async (customer) => {
-  const confirmDelete = confirm('Are you sure you want to delete this customer?')
-  if (!confirmDelete) return
-
-  try {
-    const response = await store.dispatch('customerStore/deleteCustomer', customer.id)
-
-    if (response.success) {
-      successMessage.value = response.message || 'Customer deleted successfully'
-      showSuccess.value = true
-      setTimeout(() => {
-        showSuccess.value = false
-      }, 3000)
-      fetchAllData()
-    } else {
-      errorMessage.value = response.message || 'Failed to delete customer'
-      showError.value = true
-      setTimeout(() => {
-        showError.value = false
-      }, 3000)
-    }
-  } catch (error) {
-    errorMessage.value = error.message || 'An error occurred while deleting the customer'
-    showError.value = true
-    setTimeout(() => {
-      showError.value = false
-    }, 3000)
   }
 }
 

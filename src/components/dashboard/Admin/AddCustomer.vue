@@ -355,16 +355,32 @@
           <!-- Item Name and Model -->
           <div class="mb-3 d-flex justify-content-between">
             <div class="inputs position-relative w-48">
-              <input
-                type="text"
-                id="item_name"
-                v-model="formData.item_name"
-                class="form-control border-0"
-                required
-                placeholder=" "
-                @input="handleItemOrModelChange"
-              />
-              <label for="item_name" class="form-label">Item Name</label>
+              <label class="form-label notwrok">Item Name</label>
+              <div class="search-select-container">
+                <input
+                  type="text"
+                  v-model="productSearch"
+                  class="form-control search-input border-0"
+                  placeholder="Search Product..."
+                  @focus="showProductDropdown = true"
+                />
+                <div v-if="showProductDropdown" class="custom-dropdown">
+                  <template v-if="filteredProducts.length > 0">
+                    <div
+                      v-for="product in filteredProducts"
+                      :key="product.id"
+                      class="dropdown-item"
+                      @click="selectProduct(product)"
+                    >
+                      {{ product.item_name }}
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="dropdown-item no-results">No products found</div>
+                  </template>
+                </div>
+                <input type="hidden" v-model="formData.item_name" required />
+              </div>
             </div>
             <div class="inputs position-relative w-48">
               <input
@@ -1445,6 +1461,45 @@ select.form-control option {
     display: none;
   }
 }
+
+/* Add these styles for product dropdown */
+.product-search-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+}
+
+.custom-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.no-results {
+  color: #6c757d;
+  font-style: italic;
+}
 </style>
 
 <script>
@@ -2069,7 +2124,10 @@ export default {
           switch (key.toLowerCase()) {
             case 'item':
             case 'name':
+            case 'item_name': // Add this case
+            case 'itemname': // Add this case
               formData.value.item_name = value
+              productSearch.value = value // Add this line to update search input
               break
             case 'model':
               formData.value.model = value
@@ -2077,10 +2135,11 @@ export default {
           }
         })
 
+        handleItemOrModelChange()
+
         showSuccess.value = true
         successMessage.value = 'Item details scanned successfully!'
 
-        // Add timeout to hide success message after 5 seconds
         setTimeout(() => {
           showSuccess.value = false
           successMessage.value = ''
@@ -2147,21 +2206,16 @@ export default {
       return plans
     })
 
-    // Add handler for item/model changes
     const handleItemOrModelChange = () => {
-      // Reset installment plan if changed
       formData.value.installment_plan_id = ''
 
-      // Show dropdown with filtered results
       showInstallmentPlanDropdown.value = true
 
-      // If there's exactly one matching plan, select it automatically
       if (filteredInstallmentPlans.value.length === 1) {
         selectInstallmentPlan(filteredInstallmentPlans.value[0])
       }
     }
 
-    // Add watchers for item_name and model
     watch(
       () => formData.value.item_name,
       (newVal) => {
@@ -2180,7 +2234,6 @@ export default {
       },
     )
 
-    // Add computed property for selected plan display
     const selectedPlan = computed(() => {
       const plan = installmentPlans.value.find((p) => p.id === formData.value.installment_plan_id)
       if (plan) {
@@ -2212,15 +2265,23 @@ export default {
 
     // Define click outside handler
     const handleClickOutside = (e) => {
-      const dropdown = document.querySelector('.search-select-container')
-      if (dropdown && !dropdown.contains(e.target)) {
+      const installmentDropdown = document.querySelector('.search-select-container')
+      const productDropdown = document.querySelector('.product-search-container')
+      if (
+        installmentDropdown &&
+        !installmentDropdown.contains(e.target) &&
+        productDropdown &&
+        !productDropdown.contains(e.target)
+      ) {
         showInstallmentPlanDropdown.value = false
+        showProductDropdown.value = false
       }
     }
 
     // Update onMounted to add event listener
     onMounted(() => {
       fetchInstallmentPlans()
+      fetchProducts()
       modal.value = new Modal(document.getElementById('scannerModal'))
       imagePreviewModal.value = new Modal(document.getElementById('imagePreviewModal'))
       barcodeModal.value = new Modal(document.getElementById('barcodeModal'))
@@ -2346,6 +2407,40 @@ export default {
         'error-border': validationErrors.value[fieldName]?.length > 0,
       }
     }
+    // Add new refs for product search
+    const productSearch = ref('')
+    const showProductDropdown = ref(false)
+    const products = ref([])
+
+    // Add computed for filtered products
+    const filteredProducts = computed(() => {
+      if (!productSearch.value) return products.value
+      const searchTerm = productSearch.value.toLowerCase()
+      return products.value.filter((product) =>
+        product.item_name.toLowerCase().includes(searchTerm),
+      )
+    })
+    const fetchProducts = async () => {
+      try {
+        const result = await store.dispatch('getAllInventory')
+        if (result.success) {
+          products.value = result.data.inventory || []
+        } else {
+          console.error('Failed to load products:', result.message)
+        }
+      } catch (error) {
+        console.error('Error in fetchProducts:', error)
+      }
+    }
+
+    // Update product selection method to include model
+    const selectProduct = (product) => {
+      formData.value.item_name = product.item_name
+      formData.value.model = product.model
+      productSearch.value = product.item_name
+      showProductDropdown.value = false
+      handleItemOrModelChange() // Trigger installment plan filtering
+    }
 
     return {
       loading,
@@ -2411,6 +2506,12 @@ export default {
       getCurrentOfficeLocation,
       getInputClass,
       formattedCnic,
+      productSearch,
+      showProductDropdown,
+      products,
+      filteredProducts,
+      fetchProducts,
+      selectProduct,
     }
   },
 }

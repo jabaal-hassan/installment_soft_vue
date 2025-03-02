@@ -63,6 +63,7 @@
                 </router-link>
               </li>
               <li
+                v-if="isAdminOrBranchAdmin"
                 class="dropdown-submenu"
                 @mouseenter="openDropdown('RejectedDropdown')"
                 @mouseleave="closeDropdown('RejectedDropdown')"
