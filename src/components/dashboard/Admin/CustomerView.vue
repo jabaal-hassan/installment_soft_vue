@@ -1,505 +1,392 @@
 <template>
-  <div class="customer-view">
+  <div class="customer-profile">
     <!-- Header Section -->
     <div class="header-section">
       <div class="header-container">
-        <!-- Title and Actions -->
         <div class="title-bar">
           <div class="title-wrapper">
-            <i class="fas fa-users title-icon"></i>
-            <h2 class="section-title">Customers</h2>
+            <i class="fas fa-user title-icon"></i>
+            <h2 class="section-title">Customer Profile</h2>
           </div>
-        </div>
-
-        <!-- Search and Filters -->
-        <div class="search-filter-container">
-          <!-- Search Box -->
-          <div class="search-wrapper">
-            <div class="search-box">
-              <i class="fas fa-search search-icon"></i>
-              <input
-                type="text"
-                @input="handleSearch"
-                :value="searchQuery"
-                class="search-input"
-                placeholder="Search by name, CNIC, phone number..."
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Success Message -->
-    <div v-if="showSuccess" class="alert alert-success">
-      {{ successMessage }}
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="showError" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="alert alert-danger" role="alert">
-      {{ error }}
-    </div>
-
-    <!-- Customer List -->
-    <div v-if="!loading && !error" class="customer-list">
-      <div class="customer-table">
-        <!-- Table Header -->
-        <div class="table-header">
-          <div class="header-cell">Customer Details</div>
-          <div class="header-cell">Contact Info</div>
-          <div class="header-cell">Sell Officer</div>
-          <div class="header-cell">Inquiry Officer</div>
-          <div class="header-cell">Customer image</div>
-          <div class="header-cell">Status & Actions</div>
-        </div>
-
-        <!-- Table Body -->
-        <div class="table-body">
-          <div v-for="customer in paginatedCustomers" :key="customer.id" class="table-row">
-            <!-- Customer Details -->
-            <div class="customer-cell">
-              <div class="customer-info">
-                <h4 class="customer-name">{{ customer.name }}</h4>
-                <span class="customer-father-name">{{ customer.father_name }}</span>
-              </div>
-            </div>
-
-            <!-- Contact Info -->
-            <div class="contact-cell">
-              <div class="contact-info">
-                <div class="contact-item">
-                  <span class="contact-label">Phone:</span>
-                  <span class="contact-value">{{ customer.phone_number }}</span>
-                </div>
-                <div class="contact-item">
-                  <span class="contact-label">CNIC:</span>
-                  <span class="contact-value">{{ customer.cnic }}</span>
-                </div>
-                <div class="contact-item">
-                  <span class="contact-label">Address:</span>
-                  <span class="contact-value">{{ customer.address }}</span>
-                </div>
-              </div>
-            </div>
-            <!-- Sell Officer Details -->
-            <div class="sell-officer-cell">
-              <div class="sell-officer-info">
-                <div class="sell-officer-item">
-                  <span class="sell-officer-label">Name:</span>
-                  <span class="sell-officer-value">{{ customer.sell_officer.name }}</span>
-                </div>
-                <div class="sell-officer-item">
-                  <span class="sell-officer-label">Father Name:</span>
-                  <span class="sell-officer-value">{{ customer.sell_officer.father_name }}</span>
-                </div>
-                <div class="sell-officer-item">
-                  <span class="sell-officer-label">Phone:</span>
-                  <span class="sell-officer-value">{{ customer.sell_officer.phone_number }}</span>
-                </div>
-              </div>
-            </div>
-            <!-- inquiry Officer Details -->
-            <div class="inquiry-officer-cell">
-              <div class="inquiry-officer-info">
-                <div class="inquiry-officer-item">
-                  <span class="inquiry-officer-label">Name:</span>
-                  <span class="inquiry-officer-value">{{ customer.inquiry_officer.name }}</span>
-                </div>
-                <div class="inquiry-officer-item">
-                  <span class="inquiry-officer-label">Father Name:</span>
-                  <span class="inquiry-officer-value">{{
-                    customer.inquiry_officer.father_name
-                  }}</span>
-                </div>
-                <div class="inquiry-officer-item">
-                  <span class="inquiry-officer-label">Phone:</span>
-                  <span class="inquiry-officer-value">{{
-                    customer.inquiry_officer.phone_number
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Customer Image -->
-            <div class="image-cell">
-              <img :src="customer.customer_image" alt="Customer Image" class="customer-image" />
-            </div>
-
-            <!-- Status & Actions -->
-            <div class="status-actions-cell">
-              <span class="status-badge" :class="customer.status">{{ customer.status }}</span>
-              <div class="action-buttons">
-                <button
-                  class="action-button confirm"
-                  @click="handleConfirm(customer)"
-                  :disabled="customer.status === 'confirmed'"
-                >
-                  <i class="fas fa-check"></i>
-                  <span>Confirm</span>
-                </button>
-                <button class="action-button delete" @click="handleDelete(customer)">
-                  <i class="fas fa-trash"></i>
-                  <span>Delete</span>
-                </button>
-              </div>
-            </div>
+          <div class="header-actions">
+            <button class="action-button print">
+              <i class="fas fa-print"></i>
+              <span>Print Details</span>
+              <div class="button-glow"></div>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-if="!loading && !error && filteredCustomers.length === 0" class="text-center py-5">
-      <i class="fas fa-users fa-3x text-muted mb-3"></i>
-      <h4 class="text-muted">No customers found</h4>
-    </div>
+    <!-- Profile Content -->
+    <div class="profile-content">
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div class="profile-image-wrapper">
+          <div class="profile-image-container">
+            <div class="image-overlay"></div>
+            <img :src="customer.customer_image" alt="Customer" class="profile-image" />
+          </div>
+          <div class="profile-ring"></div>
+        </div>
 
-    <!-- Pagination -->
-    <div class="d-flex justify-content-between align-items-center mt-4">
-      <div class="showing-entries">
-        Showing <span class="fw-bold">{{ pageRange.start }}-{{ pageRange.end }}</span> of
-        <span class="fw-bold">{{ pageRange.total }}</span> entries
+        <div class="profile-info">
+          <div class="name-section">
+            <h2 class="customer-name">
+              {{ customer.name }}
+              <span class="verify-badge" title="Verified Customer">
+                <i class="fas fa-check-circle"></i>
+              </span>
+            </h2>
+            <h3 class="customer-name">{{ customer.father_name }}</h3>
+          </div>
+
+          <div class="details-section">
+            <div class="detail-item">
+              <div class="detail-icon">
+                <i class="fas fa-id-card"></i>
+              </div>
+              <div class="detail-text">
+                <span class="detail-label">CNIC: </span>
+                <span class="detail-value">{{ customer.cnic }}</span>
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-icon">
+                <i class="fas fa-phone"></i>
+              </div>
+              <div class="detail-text">
+                <span class="detail-label">Phone: </span>
+                <span class="detail-value">{{ customer.phone_number }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <nav aria-label="Page navigation" v-if="totalPages > 1">
-        <ul class="pagination mb-0">
-          <li class="page-item" :class="{ disabled: currentPage === 1 }">
-            <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">
-              <i class="fas fa-chevron-left"></i>
-            </a>
-          </li>
-          <li
-            v-for="page in totalPages"
-            :key="page"
-            class="page-item"
-            :class="{ active: page === currentPage }"
-          >
-            <a class="page-link" href="#" @click.prevent="changePage(page)">
-              {{ page }}
-            </a>
-          </li>
-          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-            <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">
-              <i class="fas fa-chevron-right"></i>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </div>
 
-    <!-- No Results Message -->
-    <div v-if="filteredCustomers.length === 0" class="no-results mt-4 text-center">
-      <i class="fas fa-search fa-2x text-muted mb-2"></i>
-      <p class="text-muted">No customers found matching your search criteria</p>
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-button', { active: activeTab === tab.id }]"
+          @click="activeTab = tab.id"
+        >
+          <i :class="tab.icon"></i>
+          {{ tab.name }}
+        </button>
+      </div>
+
+      <!-- Personal Info Tab -->
+      <div v-if="activeTab === 'personal'" class="tab-pane">
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Personal Details</h4>
+            <div class="info-row">
+              <span class="label">Name</span>
+              <span class="value">{{ customer.name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Father's Name</span>
+              <span class="value">{{ customer.father_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">CNIC</span>
+              <span class="value">{{ customer.cnic }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Phone</span>
+              <span class="value">{{ customer.phone_number }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Address</span>
+              <span class="value">{{ customer.address }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Employment Details</h4>
+            <div class="info-row">
+              <span class="label">Type</span>
+              <span class="value">{{ customer.employment_type }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Company</span>
+              <span class="value">{{ customer.company_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Experience</span>
+              <span class="value">{{ customer.years_of_experience }} years</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Office Address</span>
+              <span class="value">{{ customer.office_address }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Documents</h4>
+            <div class="document-grid">
+              <div class="document-item">
+                <img
+                  :src="customer.cnic_Front_image"
+                  alt="CNIC Front"
+                  @click="openImage(customer.cnic_Front_image)"
+                />
+                <span>CNIC Front</span>
+              </div>
+              <div class="document-item">
+                <img
+                  :src="customer.cnic_Back_image"
+                  alt="CNIC Back"
+                  @click="openImage(customer.cnic_Back_image)"
+                />
+                <span>CNIC Back</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sale Details Tab -->
+      <div v-if="activeTab === 'sale'" class="tab-pane">
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Product Details</h4>
+            <div class="info-row">
+              <span class="label">Item Name</span>
+              <span class="value">{{ sale.item_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Model</span>
+              <span class="value">{{ sale.model }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Color</span>
+              <span class="value">{{ sale.color }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Serial Number</span>
+              <span class="value">{{ sale.serial_number || 'N/A' }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Payment Details</h4>
+            <div class="info-row">
+              <span class="label">Product Price</span>
+              <span class="value">Rs. {{ sale.price }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Advance Payment</span>
+              <span class="value success">Rs. {{ sale.advance }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Total Price</span>
+              <span class="value highlight">Rs. {{ sale.total_price }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Sale Date</span>
+              <span class="value">{{ sale.sale_date || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guarantor Tab -->
+      <div v-if="activeTab === 'guarantor'" class="tab-pane">
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Guarantor Details</h4>
+            <div class="info-row">
+              <span class="label">Name</span>
+              <span class="value">{{ guarantors.name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Father's Name</span>
+              <span class="value">{{ guarantors.father_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">CNIC</span>
+              <span class="value">{{ guarantors.cnic }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Phone</span>
+              <span class="value">{{ guarantors.phone_number }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Address</span>
+              <span class="value">{{ guarantors.address }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Professional Info</h4>
+            <div class="info-row">
+              <span class="label">Relationship</span>
+              <span class="value">{{ guarantors.relationship }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Employment</span>
+              <span class="value">{{ guarantors.employment_type }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Business/Company</span>
+              <span class="value">{{ guarantors.company_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Office Address</span>
+              <span class="value">{{ guarantors.office_address }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Documents</h4>
+            <div class="document-grid">
+              <div class="document-item" v-if="guarantors.cnic_front_image">
+                <img
+                  :src="guarantors.cnic_front_image"
+                  alt="CNIC Front"
+                  @click="openImage(guarantors.cnic_front_image)"
+                />
+                <span>CNIC Front</span>
+              </div>
+              <div class="document-item" v-if="guarantors.cnic_back_image">
+                <img
+                  :src="guarantors.cnic_back_image"
+                  alt="CNIC Back"
+                  @click="openImage(guarantors.cnic_back_image)"
+                />
+                <span>CNIC Back</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Tab -->
+      <div v-if="activeTab === 'account'" class="tab-pane">
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Account Overview</h4>
+            <div class="info-row">
+              <span class="label">Product</span>
+              <span class="value">{{ customerAccount.product_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Price</span>
+              <span class="value">Rs. {{ customerAccount.product_price }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4>Installment Details</h4>
+            <div class="info-row">
+              <span class="label">Duration</span>
+              <span class="value">{{ customerAccount.installment_duration }} months</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Monthly Amount</span>
+              <span class="value">Rs. {{ customerAccount.installment_price }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Remaining</span>
+              <span class="value highlight">Rs. {{ customerAccount.remaining_amount }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Paid Amount</span>
+              <span class="value success">Rs. {{ customerAccount.amount_paid }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
+import { ref } from 'vue'
 
-const store = useStore()
-const customers = ref([])
-const loading = ref(true)
-const error = ref(null)
-const searchQuery = ref('')
-const currentPage = ref(1)
-const itemsPerPage = 12
+// Mock data (replace with API call)
+const customer = ref({
+  name: 'Jabaal Hassan Tad',
+  father_name: 'Javed',
+  phone_number: '03359373723',
+  cnic: '79854-8965465-4',
+  address: 'Abdula Colony Sialkot A14',
+  office_address: 'Abdula Colony Sialkot A14',
+  employment_type: 'Company Employee',
+  company_name: 'ADF',
+  years_of_experience: 2,
+  cnic_Front_image:
+    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card-f_202502272103.jpg',
+  cnic_Back_image:
+    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card_202502272103.jpg',
+  customer_image:
+    'http://127.0.0.1:8000/storage/customers/customer_images/customer-image-1740693122516_202502272103.jpg',
+})
 
-// Success and error message states
-const successMessage = ref('')
-const errorMessage = ref('')
-const showSuccess = ref(false)
-const showError = ref(false)
+const sale = ref({
+  item_name: 'Test Item',
+  model: 'Test Model',
+  price: '15000.00',
+  advance: '5000.00',
+  total_price: '30000.00',
+  color: 'Silver',
+  serial_number: 'SN123456',
+  sale_date: '2024-02-27',
+})
 
-/************************************ fetch all data ************************************/
+const guarantors = ref({
+  name: 'Waqas Javed',
+  father_name: 'Javed',
+  cnic: '45646-8798798-7',
+  phone_number: '03359373721',
+  relationship: 'Friend',
+  employment_type: 'Own Business',
+  company_name: 'Self Employed',
+  office_address: 'Shop #123, Main Market',
+  address: 'House #456, Street 7, City',
+  cnic_front_image:
+    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card-f_202502272103.jpg',
+  cnic_back_image:
+    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card_202502272103.jpg',
+})
 
-const fetchAllData = async () => {
-  const response = await store.dispatch('customerStore/fetchBranchCustomers')
-  if (response.success) {
-    customers.value = response.customers
-  } else {
-    error.value = response.message
+const customerAccount = ref({
+  product_name: 'Test Product',
+  product_price: '15000.00',
+  installment_duration: 9,
+  installment_price: '3000.00',
+  remaining_amount: '25000.00',
+  amount_paid: '5000.00',
+})
+
+// Add tabs data
+const tabs = [
+  { id: 'personal', name: 'Personal Info', icon: 'fas fa-user' },
+  { id: 'sale', name: 'Sale Details', icon: 'fas fa-shopping-cart' },
+  { id: 'guarantor', name: 'Guarantor', icon: 'fas fa-user-shield' },
+  { id: 'account', name: 'Account', icon: 'fas fa-file-invoice-dollar' },
+]
+
+const activeTab = ref('personal')
+
+// Add function to open images in full size
+const openImage = (imageUrl) => {
+  if (imageUrl) {
+    window.open(imageUrl, '_blank')
   }
 }
-
-const filteredCustomers = computed(() => {
-  let filtered = customers.value
-
-  // Multi-field search with null checks and type conversion
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase().trim()
-    filtered = filtered.filter((customer) => {
-      // Convert all values to strings and handle null values
-      const name = (customer.name || '').toLowerCase()
-      const cnic = (customer.cnic || '').toLowerCase()
-      const phoneNumber = (customer.phone_number || '').toLowerCase()
-      const address = (customer.address || '').toLowerCase()
-
-      // Check each field
-      return (
-        name.includes(query) ||
-        cnic.includes(query) ||
-        phoneNumber.includes(query) ||
-        address.includes(query)
-      )
-    })
-  }
-
-  return filtered
-})
-
-const paginatedCustomers = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredCustomers.value.slice(start, end)
-})
-
-const totalPages = computed(() => Math.ceil(filteredCustomers.value.length / itemsPerPage))
-
-const pageRange = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage + 1
-  const end = Math.min(start + itemsPerPage - 1, filteredCustomers.value.length)
-  return { start, end, total: filteredCustomers.value.length }
-})
-
-// Methods
-const changePage = (page) => {
-  currentPage.value = page
-}
-
-const fetchCustomers = async () => {
-  try {
-    loading.value = true
-    error.value = null
-    await fetchAllData()
-  } catch (err) {
-    error.value = 'Failed to load customers'
-    console.error('Error:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Reset page when searching
-const handleSearch = (event) => {
-  searchQuery.value = event.target.value
-  currentPage.value = 1
-}
-
-onMounted(() => {
-  fetchCustomers()
-  fetchAllData()
-})
 </script>
 
 <style scoped>
-.customer-view {
+/* Base Styles */
+.customer-profile {
   padding: 20px;
-}
-
-.section-title {
-  color: #2c3e50;
-  font-weight: 600;
-}
-
-.search-box {
-  position: relative;
-  max-width: 500px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6c757d;
-}
-
-.search-input {
-  padding-left: 35px;
-  padding-right: 15px;
-  border-radius: 20px;
-  border: 1px solid #ced4da;
-  transition: all 0.3s ease;
-}
-
-.search-input:focus {
-  border-color: #8710d8;
-  box-shadow: 0 0 0 0.2rem rgba(135, 16, 216, 0.25);
-}
-
-.customer-list {
-  padding: 20px;
-}
-
-.customer-table {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-}
-
-.table-header {
-  display: grid;
-  grid-template-columns: 1.3fr 1.3fr 0.7fr 1fr 1.3fr 0.7fr;
-  padding: 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.header-cell {
-  color: #495057;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 1.3fr 1.3fr 0.7fr 1fr 1fr 1fr;
-  padding: 20px;
-  align-items: center;
-  border-bottom: 1px solid #e9ecef;
-  transition: all 0.2s ease;
-  position: relative;
-  margin-bottom: 15px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-}
-
-.table-row:hover {
-  background: #f8f9fa;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-}
-/* Default rainbow border for all items */
-.table-row::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 20px;
-  padding: 2px;
-  background: linear-gradient(45deg, #4158d0, #c850c0, #ffcc70, #4158d0);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  background-size: 300% 300%;
-  animation: borderAnimation 4s ease infinite;
-}
-
-.table-row:hover::before {
-  animation: borderAnimation 2s ease infinite;
-}
-
-@keyframes borderAnimation {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-.sell-officer-item,
-.inquiry-officer-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.sell-officer-label,
-.inquiry-officer-label {
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.sell-officer-value,
-.inquiry-officer-value {
-  font-size: 0.9rem;
-  color: #212529;
-}
-
-.customer-cell,
-.contact-cell,
-.image-cell,
-.actions-cell,
-.sell-officer-cell,
-.inquiry-officer-cell {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.customer-info,
-.contact-info,
-.sell-officer-info,
-.inquiry-officer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.customer-name,
-.contact-item {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #212529;
-  margin: 0;
-}
-
-.customer-father-name,
-.contact-label {
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.customer-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e9ecef;
-}
-
-.actions-cell {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.showing-entries {
-  color: #6c757d;
-}
-
-.no-results {
-  padding: 40px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.no-results i {
-  color: #dee2e6;
+  background-color: #f8f9fa;
 }
 
 /* Header Section */
@@ -512,11 +399,39 @@ onMounted(() => {
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-.header-container {
+.action-button {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.print {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+.button-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.action-button:hover .button-glow {
+  opacity: 1;
+  transform: scale(1.2);
 }
 
 .title-bar {
@@ -546,199 +461,350 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.search-filter-container {
+/* Profile Content Section */
+.profile-content {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.profile-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 24px;
-  margin-top: 20px;
-}
-
-.search-wrapper {
-  width: 90%;
-  max-width: 506px;
-  margin: 0 auto;
-}
-
-.search-box {
+  gap: 40px;
+  margin-bottom: 40px;
+  padding: 30px;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
   position: relative;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
   overflow: hidden;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.search-icon {
+.profile-header::before {
+  content: '';
   position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: translateX(-100%);
+  animation: shine 3s infinite;
 }
 
-.search-input {
+/* Profile Image Styles */
+.profile-image-wrapper {
+  position: relative;
+  padding: 8px;
+}
+
+.profile-image-container {
+  width: 180px;
+  height: 180px;
+  border-radius: 30px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(145deg, #ffffff, #e6e6e6);
+  box-shadow:
+    -8px -8px 20px #ffffff,
+    8px 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.profile-image {
   width: 100%;
-  padding: 14px 14px 14px 48px;
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 0.95rem;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-.search-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+.profile-image:hover {
+  transform: scale(1.05);
 }
 
-.search-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(65, 88, 208, 0.3);
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, rgba(65, 88, 208, 0.1), rgba(200, 80, 192, 0.1));
+  z-index: 1;
 }
 
-/* Responsive Styles */
-@media (max-width: 768px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 15px;
-  }
-
-  .header-cell {
-    display: none;
-  }
-
-  .table-row {
-    background: white;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-
-  .customer-cell,
-  .contact-cell,
-  .image-cell,
-  .actions-cell {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
-  }
-
-  .customer-cell {
-    border-bottom: none;
-  }
-
-  .actions-cell {
-    justify-content: flex-start;
-    border-bottom: none;
-  }
-
-  .showing-entries {
-    text-align: center;
-    margin-bottom: 15px;
-  }
-
-  .pagination {
-    justify-content: center;
-  }
+.profile-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  padding: 2px;
+  background: linear-gradient(45deg, #4158d0, #c850c0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
-@media (max-width: 576px) {
-  .customer-name,
-  .contact-item {
-    font-size: 0.9rem;
-  }
-
-  .customer-father-name,
-  .contact-label {
-    font-size: 0.8rem;
-  }
-
-  .customer-image {
-    width: 60px;
-    height: 60px;
-  }
-
-  .action-button.confirm {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-  }
-  .action-button.delete {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-  }
+/* Profile Status */
+.profile-status {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  z-index: 2;
 }
 
-.status-actions-cell {
+/* Profile Info */
+.profile-info {
+  flex: 1;
+}
+
+.name-section {
+  margin-bottom: 20px;
+}
+
+.customer-name {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  background: linear-gradient(180deg, #4199d0, #7c50c8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.85rem;
+.father-name {
+  font-size: 18px;
+  color: #666;
+  margin: 5px 0 0 0;
   font-weight: 500;
-  text-transform: capitalize;
 }
 
-.status-badge.processing {
-  background: #ffcc00;
-  color: #000;
+.verify-badge {
+  color: #4158d0;
+  font-size: 20px;
 }
 
-.status-badge.confirmed {
-  background: #00cc66;
-  color: #fff;
-}
-
-.status-badge.rejected {
-  background: #ff4d4d;
-  color: #fff;
-}
-
-.action-buttons {
+/* Details Section */
+.details-section {
   display: flex;
-  gap: 8px;
+  gap: 30px;
 }
 
-.action-button {
+.detail-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: 15px;
+  padding: 12px 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.detail-item:hover {
+  transform: translateY(-2px);
+}
+
+.detail-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4158d0, #c850c0);
+  border-radius: 12px;
+  color: white;
+  font-size: 18px;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.tab-button {
+  padding: 12px 24px;
   border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  background: none;
+  color: #666;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.action-button.confirm {
-  background: #00cc66;
-  color: white;
+.tab-button.active {
+  color: #4158d0;
+  position: relative;
 }
 
-.action-button.confirm:disabled {
-  background: #b3e6cc;
-  cursor: not-allowed;
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #4158d0;
 }
 
-.action-button.delete {
-  background: #ff4d4d;
-  color: white;
+/* Info Grid and Cards */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
 }
 
-.action-button.delete:disabled {
-  background: #ffb3b3;
-  cursor: not-allowed;
+.info-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #eee;
 }
 
-.action-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
+.info-card h4 {
+  color: #2c3e50;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+/* Labels and Values */
+.label {
+  color: #666;
+  font-weight: 500;
+}
+
+.value {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.highlight {
+  color: #4158d0;
+}
+
+.success {
+  color: #10b981;
+}
+
+/* Document Grid */
+.document-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.document-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-item img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.document-item img:hover {
+  transform: scale(1.05);
+}
+
+.document-item span {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Animations */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .details-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .detail-item {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tab-navigation {
+    overflow-x: auto;
+    padding-bottom: 5px;
+  }
+
+  .tab-button {
+    padding: 10px 15px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
