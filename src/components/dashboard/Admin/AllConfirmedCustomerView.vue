@@ -226,7 +226,7 @@ const showError = ref(false)
 /************************************ fetch all data ************************************/
 
 const fetchAllData = async () => {
-  const response = await store.dispatch('customerStore/fetchBranchCustomers')
+  const response = await store.dispatch('customerStore/fetchConfiredCustomers')
   if (response.success) {
     customers.value = response.customers
   } else {

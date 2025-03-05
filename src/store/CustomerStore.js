@@ -309,12 +309,12 @@ const actions = {
     }
   },
   /************************************ fetch inquiry Customer ************************************/
-  async fetchBranchCustomers({ commit }) {
+  async fetchConfiredCustomers({ commit }) {
     commit('SET_CUSTOMERS_LOADING', true)
     commit('SET_CUSTOMERS_ERROR', null)
 
     try {
-      const response = await AuthApiServices.GetRequest('/get-branch-customers')
+      const response = await AuthApiServices.GetRequest('/get-confirmed-customers')
 
       if (response.data && response.data.customers) {
         commit('SET_BRANCH_CUSTOMERS', response.data.customers)
