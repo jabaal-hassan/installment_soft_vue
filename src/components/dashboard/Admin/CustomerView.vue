@@ -19,8 +19,20 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+
     <!-- Profile Content -->
-    <div class="profile-content">
+    <div v-else-if="customer" class="profile-content">
       <!-- Profile Header -->
       <div class="profile-header">
         <div class="profile-image-wrapper">
@@ -129,7 +141,7 @@
           <div class="info-card">
             <h4>Documents</h4>
             <div class="document-grid">
-              <div class="document-item">
+              <div class="document-item" v-if="customer.cnic_Front_image">
                 <img
                   :src="customer.cnic_Front_image"
                   alt="CNIC Front"
@@ -137,7 +149,7 @@
                 />
                 <span>CNIC Front</span>
               </div>
-              <div class="document-item">
+              <div class="document-item" v-if="customer.cnic_Back_image">
                 <img
                   :src="customer.cnic_Back_image"
                   alt="CNIC Back"
@@ -164,12 +176,16 @@
               <span class="value">{{ sale.model }}</span>
             </div>
             <div class="info-row">
-              <span class="label">Color</span>
-              <span class="value">{{ sale.color }}</span>
+              <span class="label">Brand</span>
+              <span class="value">{{ sale.brand_name }}</span>
             </div>
             <div class="info-row">
               <span class="label">Serial Number</span>
               <span class="value">{{ sale.serial_number || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Category</span>
+              <span class="value">{{ sale.category_name || 'N/A' }}</span>
             </div>
           </div>
 
@@ -188,8 +204,12 @@
               <span class="value highlight">Rs. {{ sale.total_price }}</span>
             </div>
             <div class="info-row">
+              <span class="label">Installment Price</span>
+              <span class="value highlight">Rs. {{ customerAccount.installment_price }}</span>
+            </div>
+            <div class="info-row">
               <span class="label">Sale Date</span>
-              <span class="value">{{ sale.sale_date || 'N/A' }}</span>
+              <span class="value">{{ formattedSaleDate }}</span>
             </div>
           </div>
         </div>
@@ -245,19 +265,19 @@
           <div class="info-card">
             <h4>Documents</h4>
             <div class="document-grid">
-              <div class="document-item" v-if="guarantors.cnic_front_image">
+              <div class="document-item" v-if="guarantors.cnic_Front_image">
                 <img
-                  :src="guarantors.cnic_front_image"
+                  :src="guarantors.cnic_Front_image"
                   alt="CNIC Front"
-                  @click="openImage(guarantors.cnic_front_image)"
+                  @click="openImage(guarantors.cnic_Front_image)"
                 />
                 <span>CNIC Front</span>
               </div>
-              <div class="document-item" v-if="guarantors.cnic_back_image">
+              <div class="document-item" v-if="guarantors.cnic_Back_image">
                 <img
-                  :src="guarantors.cnic_back_image"
+                  :src="guarantors.cnic_Back_image"
                   alt="CNIC Back"
-                  @click="openImage(guarantors.cnic_back_image)"
+                  @click="openImage(guarantors.cnic_Back_image)"
                 />
                 <span>CNIC Back</span>
               </div>
@@ -276,8 +296,12 @@
               <span class="value">{{ customerAccount.product_name }}</span>
             </div>
             <div class="info-row">
+              <span class="label">Model</span>
+              <span class="value">{{ sale.model }}</span>
+            </div>
+            <div class="info-row">
               <span class="label">Price</span>
-              <span class="value">Rs. {{ customerAccount.product_price }}</span>
+              <span class="value">Rs. {{ customerAccount.installment_total_price }}</span>
             </div>
           </div>
 
@@ -305,66 +329,23 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useRoute } from 'vue-router'
 
-// Mock data (replace with API call)
-const customer = ref({
-  name: 'Jabaal Hassan Tad',
-  father_name: 'Javed',
-  phone_number: '03359373723',
-  cnic: '79854-8965465-4',
-  address: 'Abdula Colony Sialkot A14',
-  office_address: 'Abdula Colony Sialkot A14',
-  employment_type: 'Company Employee',
-  company_name: 'ADF',
-  years_of_experience: 2,
-  cnic_Front_image:
-    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card-f_202502272103.jpg',
-  cnic_Back_image:
-    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card_202502272103.jpg',
-  customer_image:
-    'http://127.0.0.1:8000/storage/customers/customer_images/customer-image-1740693122516_202502272103.jpg',
-})
+const store = useStore()
+const route = useRoute()
 
-const sale = ref({
-  item_name: 'Test Item',
-  model: 'Test Model',
-  price: '15000.00',
-  advance: '5000.00',
-  total_price: '30000.00',
-  color: 'Silver',
-  serial_number: 'SN123456',
-  sale_date: '2024-02-27',
-})
+// Reactive variables
+const customer = ref({})
+const sale = ref({})
+const customerAccount = ref({})
+const guarantors = ref({})
+const loading = ref(false)
+const error = ref(null)
 
-const guarantors = ref({
-  name: 'Waqas Javed',
-  father_name: 'Javed',
-  cnic: '45646-8798798-7',
-  phone_number: '03359373721',
-  relationship: 'Friend',
-  employment_type: 'Own Business',
-  company_name: 'Self Employed',
-  office_address: 'Shop #123, Main Market',
-  address: 'House #456, Street 7, City',
-  cnic_front_image:
-    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card-f_202502272103.jpg',
-  cnic_back_image:
-    'http://127.0.0.1:8000/storage/customers/cnic_images/jabal-id-card_202502272103.jpg',
-})
-
-const customerAccount = ref({
-  product_name: 'Test Product',
-  product_price: '15000.00',
-  installment_duration: 9,
-  installment_price: '3000.00',
-  remaining_amount: '25000.00',
-  amount_paid: '5000.00',
-})
-
-// Add tabs data
+// Tabs data
 const tabs = [
   { id: 'personal', name: 'Personal Info', icon: 'fas fa-user' },
   { id: 'sale', name: 'Sale Details', icon: 'fas fa-shopping-cart' },
@@ -374,14 +355,37 @@ const tabs = [
 
 const activeTab = ref('personal')
 
-// Add function to open images in full size
+const formattedSaleDate = computed(() => {
+  return sale.value.created_at ? sale.value.created_at.split('T')[0] : 'N/A'
+})
+
+// Fetch customer details on component mount
+onMounted(async () => {
+  const customerId = route.params.customer_id // Get customer ID from the route
+  if (customerId) {
+    loading.value = true
+    const result = await store.dispatch('customerStore/fetchCustomerDetails', customerId)
+
+    if (result.success) {
+      // Assign the fetched data to reactive variables
+      customer.value = result.data.customer
+      sale.value = result.data.sale
+      customerAccount.value = result.data.customerAccount
+      guarantors.value = result.data.guarantors
+    } else {
+      error.value = result.message || 'Failed to fetch customer details'
+    }
+    loading.value = false
+  }
+})
+
+// Function to open images in full size
 const openImage = (imageUrl) => {
   if (imageUrl) {
     window.open(imageUrl, '_blank')
   }
 }
 </script>
-
 <style scoped>
 /* Base Styles */
 .customer-profile {

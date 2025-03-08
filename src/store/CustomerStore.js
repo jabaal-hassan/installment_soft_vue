@@ -12,6 +12,9 @@ const state = {
   inquiryCustomers: [],
   rejectedCustomers: [],
   branchCustomers: [],
+  sale: [],
+  customerAccount: [],
+  guarantors: [],
 }
 
 const mutations = {
@@ -53,6 +56,18 @@ const mutations = {
     if (customer) {
       customer.status = status
     }
+  },
+  SET_CUSTOMER(state, customer) {
+    state.customer = customer
+  },
+  SET_SALE(state, sale) {
+    state.sale = sale
+  },
+  SET_CUSTOMER_ACCOUNT(state, customerAccount) {
+    state.customerAccount = customerAccount
+  },
+  SET_GUARANTORS(state, guarantors) {
+    state.guarantors = guarantors
   },
 }
 
@@ -417,6 +432,9 @@ const actions = {
       commit('SET_LOADING', false)
     }
   },
+
+  /************************************get Inquiry Officers ************************************/
+
   async getInquiryOfficers({ commit }) {
     commit('SET_LOADING', true)
     commit('SET_ERROR', null)
@@ -441,6 +459,39 @@ const actions = {
       commit('SET_LOADING', false)
     }
   },
+
+  /************************************ fetch Customer Details ************************************/
+
+  async fetchCustomerDetails({ commit }, customerId) {
+    commit('SET_LOADING', true)
+    commit('SET_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.GetRequest(`/get-customer/${customerId}`)
+
+      if (response.message === 'Customer retrieved successfully') {
+        commit('SET_CUSTOMER', response.data.customer)
+        commit('SET_SALE', response.data.sale)
+        commit('SET_CUSTOMER_ACCOUNT', response.data.customerAccount)
+        commit('SET_GUARANTORS', response.data.guarantors)
+        return {
+          success: true,
+          message: response.message || 'Customer details fetched successfully',
+          data: response.data,
+        }
+      } else {
+        throw new Error(response.message || 'Failed to fetch customer details')
+      }
+    } catch (error) {
+      commit('SET_ERROR', error.message || 'Failed to fetch customer details')
+      return {
+        success: false,
+        message: error.message,
+      }
+    } finally {
+      commit('SET_LOADING', false)
+    }
+  },
 }
 
 const getters = {
@@ -452,6 +503,9 @@ const getters = {
   isCustomersLoading: (state) => state.customersLoading,
   customersError: (state) => state.customersError,
   customersWithoutGuarantors: (state) => state.customersWithoutGuarantors,
+  sale: (state) => state.sale,
+  customerAccount: (state) => state.customerAccount,
+  guarantors: (state) => state.guarantors,
 }
 
 export default {

@@ -87,7 +87,7 @@ const routes = [
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
       },
       {
-        path: '/dashboard/view-customers/jabaal',
+        path: '/dashboard/view-confirmed-customers/:customer_id/:customer_name',
         name: 'CustomerView',
         component: () => import('@/components/dashboard/Admin/CustomerView.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },

@@ -66,7 +66,12 @@
 
         <!-- Table Body -->
         <div class="table-body">
-          <div v-for="customer in paginatedCustomers" :key="customer.id" class="table-row">
+          <router-link
+            v-for="customer in paginatedCustomers"
+            :key="customer.id"
+            class="table-row"
+            :to="`/dashboard/view-confirmed-customers/${customer.id}/${customer.name}`"
+          >
             <!-- Customer Details -->
             <div class="customer-cell">
               <div class="customer-info">
@@ -154,7 +159,7 @@
                 </button>
               </div>
             </div>
-          </div>
+          </router-link>
         </div>
       </div>
     </div>
@@ -377,12 +382,15 @@ onMounted(() => {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  text-decoration: none; /* Remove underline from router-link */
+  color: inherit; /* Inherit text color */
 }
 
 .table-row:hover {
   background: #f8f9fa;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
 }
 /* Default rainbow border for all items */
 .table-row::before {
