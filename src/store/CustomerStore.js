@@ -12,6 +12,7 @@ const state = {
   inquiryCustomers: [],
   rejectedCustomers: [],
   branchCustomers: [],
+  confirmCustomers: [],
   sale: [],
   customerAccount: [],
   guarantors: [],
@@ -47,6 +48,10 @@ const mutations = {
   },
   SET_BRANCH_CUSTOMERS(state, customers) {
     state.branchCustomers = customers
+  },
+
+  SET_CONFIRM_CUSTOMERS(state, customers) {
+    state.confirmCustomers = customers
   },
   SET_INQUIRY_OFFICERS(state, officers) {
     state.inquiryOfficers = officers
@@ -323,13 +328,44 @@ const actions = {
       commit('SET_CUSTOMERS_LOADING', false)
     }
   },
-  /************************************ fetch inquiry Customer ************************************/
+  /************************************ fetch confired Customer ************************************/
   async fetchConfiredCustomers({ commit }) {
     commit('SET_CUSTOMERS_LOADING', true)
     commit('SET_CUSTOMERS_ERROR', null)
 
     try {
       const response = await AuthApiServices.GetRequest('/get-confirmed-customers')
+
+      if (response.data && response.data.customers) {
+        commit('SET_CONFIRM_CUSTOMERS', response.data.customers)
+        return {
+          success: true,
+          message: response.message,
+          customers: response.data.customers,
+        }
+      }
+
+      throw new Error('Invalid response structure')
+    } catch (error) {
+      console.error('Error fetching confirm customers:', error)
+      commit('SET_CUSTOMERS_ERROR', error.message || 'Failed to fetch customers')
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+        customers: [],
+      }
+    } finally {
+      commit('SET_CUSTOMERS_LOADING', false)
+    }
+  },
+
+  /************************************ fetch inquiry Customer ************************************/
+  async fetchBranchCustomers({ commit }) {
+    commit('SET_CUSTOMERS_LOADING', true)
+    commit('SET_CUSTOMERS_ERROR', null)
+
+    try {
+      const response = await AuthApiServices.GetRequest('/get-branch-customers')
 
       if (response.data && response.data.customers) {
         commit('SET_BRANCH_CUSTOMERS', response.data.customers)

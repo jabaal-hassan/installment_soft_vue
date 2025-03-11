@@ -217,7 +217,7 @@ const showError = ref(false)
 /************************************ fetch all data ************************************/
 
 const fetchAllData = async () => {
-  const response = await store.dispatch('customerStore/fetchConfiredCustomers')
+  const response = await store.dispatch('customerStore/fetchBranchCustomers')
   if (response.success) {
     customers.value = response.customers
   } else {
@@ -682,13 +682,8 @@ onMounted(() => {
   color: #000;
 }
 
-.status-badge.confirmed {
+.status-badge.delivered {
   background: #00cc66;
-  color: #fff;
-}
-
-.status-badge.rejected {
-  background: #ff4d4d;
   color: #fff;
 }
 
@@ -709,26 +704,6 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 50;
-}
-
-.action-button.confirm {
-  background: #00cc66;
-  color: white;
-}
-
-.action-button.confirm:disabled {
-  background: #b3e6cc;
-  cursor: not-allowed;
-}
-
-.action-button.delete {
-  background: #ff4d4d;
-  color: white;
-}
-
-.action-button.delete:disabled {
-  background: #ffb3b3;
-  cursor: not-allowed;
 }
 
 .action-button:hover:not(:disabled) {

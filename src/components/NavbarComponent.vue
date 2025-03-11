@@ -76,9 +76,19 @@
                 class="dropdown-submenu"
                 @mouseenter="openDropdown('viewCustomerDropdown')"
                 @mouseleave="closeDropdown('viewCustomerDropdown')"
+                v-if="isAdminOrBranchAdmin"
               >
                 <router-link to="/dashboard/view-confirmed-customers" class="dropdown-item">
                   <i class="fas fa-users-viewfinder me-2"></i> Delivery Table
+                </router-link>
+              </li>
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewCustomerDropdown')"
+                @mouseleave="closeDropdown('viewCustomerDropdown')"
+              >
+                <router-link to="/dashboard/view-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> View Customers
                 </router-link>
               </li>
             </ul>

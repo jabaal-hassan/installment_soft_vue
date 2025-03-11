@@ -9,7 +9,7 @@
             <h2 class="section-title">Customer Profile</h2>
           </div>
           <div class="header-actions">
-            <button class="action-button print">
+            <button class="action-button print" @click="printCustomerDetails">
               <i class="fas fa-print"></i>
               <span>Print Details</span>
               <div class="button-glow"></div>
@@ -17,6 +17,15 @@
           </div>
         </div>
       </div>
+    </div>
+    <!-- Success Message -->
+    <div v-if="showSuccess" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="showError" class="alert alert-danger">
+      {{ errorMessage }}
     </div>
 
     <!-- Loading State -->
@@ -74,6 +83,24 @@
                 <span class="detail-value">{{ customer.phone_number }}</span>
               </div>
             </div>
+          </div>
+        </div>
+        <!-- Status & Actions -->
+        <div class="status-actions-cell">
+          <span class="status-badge" :class="customer.status">{{ customer.status }}</span>
+          <div class="action-buttons" v-if="customer.status !== 'delivered'">
+            <button
+              class="action-button deliver"
+              @click="handleDeliver(customer)"
+              :disabled="customer.status === 'delivered'"
+            >
+              <i class="fas fa-check"></i>
+              <span>Deliver</span>
+            </button>
+            <button class="action-button delete" @click="handleDelete(customer)">
+              <i class="fas fa-trash"></i>
+              <span>Delete</span>
+            </button>
           </div>
         </div>
       </div>
@@ -333,6 +360,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
+import router from '@/router'
 
 const store = useStore()
 const route = useRoute()
@@ -344,6 +372,10 @@ const customerAccount = ref({})
 const guarantors = ref({})
 const loading = ref(false)
 const error = ref(null)
+const successMessage = ref('')
+const errorMessage = ref('')
+const showSuccess = ref(false)
+const showError = ref(false)
 
 // Tabs data
 const tabs = [
@@ -359,15 +391,13 @@ const formattedSaleDate = computed(() => {
   return sale.value.created_at ? sale.value.created_at.split('T')[0] : 'N/A'
 })
 
-// Fetch customer details on component mount
 onMounted(async () => {
-  const customerId = route.params.customer_id // Get customer ID from the route
+  const customerId = route.params.customer_id
   if (customerId) {
     loading.value = true
     const result = await store.dispatch('customerStore/fetchCustomerDetails', customerId)
 
     if (result.success) {
-      // Assign the fetched data to reactive variables
       customer.value = result.data.customer
       sale.value = result.data.sale
       customerAccount.value = result.data.customerAccount
@@ -378,6 +408,57 @@ onMounted(async () => {
     loading.value = false
   }
 })
+/************************************ Handle delivered Action ************************************/
+
+const handleDeliver = async (customer) => {
+  const result = await store.dispatch('customerStore/updateCustomerStatus', {
+    id: customer.id,
+    status: 'delivered',
+  })
+
+  if (result.success) {
+    successMessage.value = 'Customer delivered successfully'
+    showSuccess.value = true
+    // Refresh the page after 3 seconds
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  } else {
+    errorMessage.value = result.message || 'Failed to deliver customer'
+    showError.value = true
+  }
+}
+
+/************************************ Handle delete Action ************************************/
+const handleDelete = async (customer) => {
+  const confirmDelete = confirm('Are you sure you want to delete this customer?')
+  if (!confirmDelete) return
+
+  try {
+    const response = await store.dispatch('customerStore/deleteCustomer', customer.id)
+
+    if (response.success) {
+      successMessage.value = response.message || 'Customer deleted successfully'
+      showSuccess.value = true
+      setTimeout(() => {
+        showSuccess.value = false
+        router.push({ name: 'home' })
+      }, 3000)
+    } else {
+      errorMessage.value = response.message || 'Failed to delete customer'
+      showError.value = true
+      setTimeout(() => {
+        showError.value = false
+      }, 3000)
+    }
+  } catch (error) {
+    errorMessage.value = error.message || 'An error occurred while deleting the customer'
+    showError.value = true
+    setTimeout(() => {
+      showError.value = false
+    }, 3000)
+  }
+}
 
 // Function to open images in full size
 const openImage = (imageUrl) => {
@@ -385,7 +466,197 @@ const openImage = (imageUrl) => {
     window.open(imageUrl, '_blank')
   }
 }
+
+// Add print function
+const printCustomerDetails = () => {
+  const printWindow = window.open('', '_blank')
+
+  const content = `
+    <html>
+      <head>
+        <title>Customer Details - ${customer.value.name}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+          }
+          .header-text {
+            flex: 1;
+          }
+          .customer-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-left: 20px;
+          }
+          .title {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 24px;
+          }
+          .date {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+          }
+          .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+          }
+          .section {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+          }
+          .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+          }
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+          }
+          .label {
+            font-weight: 500;
+            color: #666;
+          }
+          .value {
+            color: #333;
+          }
+          @media print {
+            body {
+              padding: 0;
+              margin: 0;
+            }
+            .main-content {
+              page-break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="header-text">
+            <h1 class="title">Customer Details</h1>
+            <p class="date">Generated on ${new Date().toLocaleDateString()}</p>
+          </div>
+          <img src="${customer.value.customer_image}" alt="Customer" class="customer-image"/>
+        </div>
+
+        <div class="main-content">
+          <div class="section">
+            <div class="section-title">Personal Information</div>
+            <div class="info-row">
+              <span class="label">Name:</span>
+              <span class="value">${customer.value.name}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Father's Name:</span>
+              <span class="value">${customer.value.father_name}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">CNIC:</span>
+              <span class="value">${customer.value.cnic}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Phone:</span>
+              <span class="value">${customer.value.phone_number}</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Product Details</div>
+            <div class="info-row">
+              <span class="label">Item:</span>
+              <span class="value">${sale.value.item_name}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Model:</span>
+              <span class="value">${sale.value.model}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Price:</span>
+              <span class="value">Rs. ${sale.value.price}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Advance:</span>
+              <span class="value">Rs. ${sale.value.advance}</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Guarantor Information</div>
+            <div class="info-row">
+              <span class="label">Name:</span>
+              <span class="value">${guarantors.value.name}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">CNIC:</span>
+              <span class="value">${guarantors.value.cnic}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Phone:</span>
+              <span class="value">${guarantors.value.phone_number}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Relationship:</span>
+              <span class="value">${guarantors.value.relationship}</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Account Details</div>
+            <div class="info-row">
+              <span class="label">Monthly:</span>
+              <span class="value">Rs. ${customerAccount.value.installment_price}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Duration:</span>
+              <span class="value">${customerAccount.value.installment_duration} months</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Remaining:</span>
+              <span class="value">Rs. ${customerAccount.value.remaining_amount}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Paid:</span>
+              <span class="value">Rs. ${customerAccount.value.amount_paid}</span>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+
+  printWindow.document.write(content)
+  printWindow.document.close()
+
+  setTimeout(() => {
+    printWindow.print()
+  }, 250)
+}
 </script>
+
 <style scoped>
 /* Base Styles */
 .customer-profile {
@@ -597,6 +868,69 @@ const openImage = (imageUrl) => {
   font-size: 20px;
 }
 
+.status-actions-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.status-badge.delivered {
+  background-color: #10b981;
+  color: white;
+}
+.status-badge.confirmed {
+  background: #00cc66;
+  color: #fff;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.action-button.deliver {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.action-button.deliver:hover {
+  background-color: #2563eb;
+}
+
+.action-button.delete {
+  background-color: #ef4444;
+  color: white;
+}
+
+.action-button.delete:hover {
+  background-color: #dc2626;
+}
+
+.action-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
 /* Details Section */
 .details-section {
   display: flex;
@@ -810,5 +1144,11 @@ const openImage = (imageUrl) => {
   .info-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Add print button hover effect */
+.action-button.print:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 </style>
