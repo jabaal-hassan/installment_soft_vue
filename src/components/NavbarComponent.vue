@@ -26,7 +26,6 @@
       <!-- Desktop & Tablet View - Navbar Links -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
-          <!-- Add this new Customer Dropdown section before the existing dropdowns -->
           <li
             class="nav-item dropdown"
             @mouseenter="openDropdown('customerDropdown')"
@@ -45,7 +44,44 @@
                   <i class="fas fa-user-plus me-2"></i> Add Customer
                 </router-link>
               </li>
-
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('addGuarantorDropdown')"
+                @mouseleave="closeDropdown('addGuarantorDropdown')"
+              >
+                <router-link to="/dashboard/customer-without-guarantor" class="dropdown-item">
+                  <i class="fas fa-user-plus me-2"></i> Add Guarantor
+                </router-link>
+              </li>
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('InquiryDropdown')"
+                @mouseleave="closeDropdown('InquiryDropdown')"
+              >
+                <router-link to="/dashboard/inquiry-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Inquiry Customers
+                </router-link>
+              </li>
+              <li
+                v-if="isAdminOrBranchAdmin"
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('RejectedDropdown')"
+                @mouseleave="closeDropdown('RejectedDropdown')"
+              >
+                <router-link to="/dashboard/rejected-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Rejected Customers
+                </router-link>
+              </li>
+              <li
+                class="dropdown-submenu"
+                @mouseenter="openDropdown('viewCustomerDropdown')"
+                @mouseleave="closeDropdown('viewCustomerDropdown')"
+                v-if="isAdminOrBranchAdmin"
+              >
+                <router-link to="/dashboard/view-confirmed-customers" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Delivery Table
+                </router-link>
+              </li>
               <li
                 class="dropdown-submenu"
                 @mouseenter="openDropdown('viewCustomerDropdown')"
@@ -348,7 +384,8 @@ export default {
 }
 
 .logo {
-  width: 5em;
+  width: 50px;
+  height: 50px;
   transition: transform 0.3s ease;
 }
 

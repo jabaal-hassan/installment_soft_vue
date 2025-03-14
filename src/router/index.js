@@ -19,7 +19,7 @@ const routes = [
   },
   {
     path: '/dashboard',
-    name: 'dashboard',
+    name: 'home',
     component: DashboardView,
     meta: { requiresAuth: true },
     children: [
@@ -75,9 +75,51 @@ const routes = [
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
       },
       {
+        path: '/dashboard/rejected-customers',
+        name: 'RejectedCustomers',
+        component: () => import('@/components/dashboard/Admin/RejectedCustomerView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
+      {
+        path: '/dashboard/view-confirmed-customers',
+        name: 'ViewConfirmedCustomers',
+        component: () => import('@/components/dashboard/Admin/AllConfirmedCustomerView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
+      {
+        path: '/dashboard/view-customers',
+        name: 'ViewCustomers',
+        component: () => import('@/components/dashboard/Admin/AllCustomersView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
+      {
+        path: '/dashboard/view-confirmed-customers/:customer_id/:customer_name',
+        name: 'CustomerView',
+        component: () => import('@/components/dashboard/Admin/CustomerView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
+      },
+      {
         path: '/dashboard/add-customer',
         name: 'AddCustomer',
         component: () => import('@/components/dashboard/Admin/AddCustomer.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
+      {
+        path: '/dashboard/add-guarantor',
+        name: 'AddGuarantor',
+        component: () => import('@/components/dashboard/Admin/AddGuarantor.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
+      {
+        path: '/dashboard/customer-without-guarantor',
+        name: 'CustomerWithoutGuarantor',
+        component: () => import('@/components/dashboard/Admin/CustomerWithoutGuarantorView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
+      {
+        path: '/dashboard/inquiry-customers',
+        name: 'InquiryCustomers',
+        component: () => import('@/components/dashboard/Admin/InquiryCustomerView.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
       },
     ],

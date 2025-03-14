@@ -2,33 +2,9 @@
   <div class="container-fluid d-flex align-items-center justify-content-center bg-white my-4">
     <div class="row w-75 shadow-lg">
       <div class="col-md-12 bg-white p-5">
-        <!-- Add header with scan button -->
+        <!-- Change header text -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="fs-3 fw-bold m-0">Add Customer</h1>
-          <button type="button" class="btn btn-outline-secondary" @click="startScanner">
-            <i class="fas fa-qrcode me-2"></i>Scan QR/Barcode
-          </button>
-        </div>
-
-        <!-- Add scanner modal -->
-        <div
-          class="modal fade"
-          id="barcodeModal"
-          tabindex="-1"
-          aria-labelledby="barcodeModalLabel"
-          aria-hidden="true"
-        >
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="barcodeModalLabel">Scan QR/Barcode</h5>
-                <button type="button" class="btn-close" @click="stopBarcodeScanner"></button>
-              </div>
-              <div class="modal-body">
-                <div id="barcodeReader"></div>
-              </div>
-            </div>
-          </div>
+          <h1 class="fs-3 fw-bold m-0">Add Guarantor</h1>
         </div>
 
         <!-- Success and Error Popup Components -->
@@ -53,9 +29,9 @@
           </div>
         </div>
 
-        <!-- Customer Add Form -->
+        <!-- Guarantor Add Form -->
         <form @submit.prevent="submitForm">
-          <!-- File Uploads -->
+          <!-- File Uploads - Only CNIC front and back -->
           <div class="mb-3 d-flex justify-content-between">
             <div class="inputs position-relative w-48" :class="getInputClass('cnic_front_image')">
               <div v-if="formData.cnic_front_image" class="image-preview-container">
@@ -127,74 +103,6 @@
             </div>
           </div>
 
-          <div class="mb-3 d-flex justify-content-between">
-            <div class="inputs position-relative w-48" :class="getInputClass('customer_image')">
-              <div v-if="formData.customer_image" class="image-preview-container">
-                <img
-                  :src="getImagePreviewUrl(formData.customer_image)"
-                  class="preview-image"
-                  alt="Customer"
-                  @click="openImagePreview('customer_image')"
-                />
-                <button @click="removeImage('customer_image')" class="remove-image-btn">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <div v-else class="d-flex btn-group-custom">
-                <button
-                  @click="openCameraModal('customer_image')"
-                  class="btn btn-primary custom-btn"
-                >
-                  <i class="fas fa-camera me-2"></i>Capture
-                </button>
-                <div class="file-input-container">
-                  <input
-                    type="file"
-                    id="customer_image"
-                    @change="handleFileUpload('customer_image', $event)"
-                    class="form-control border-0 d-none"
-                    accept="image/*"
-                  />
-                  <label for="customer_image" class="btn btn-secondary custom-btn">
-                    <i class="fas fa-file-upload me-2"></i>Choose
-                  </label>
-                </div>
-              </div>
-              <label for="customer_image" class="form-label notwrok">Customer Image</label>
-            </div>
-            <div class="inputs position-relative w-48" :class="getInputClass('check_image')">
-              <div v-if="formData.check_image" class="image-preview-container">
-                <img
-                  :src="getImagePreviewUrl(formData.check_image)"
-                  class="preview-image"
-                  alt="Check"
-                  @click="openImagePreview('check_image')"
-                />
-                <button @click="removeImage('check_image')" class="remove-image-btn">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <div v-else class="d-flex btn-group-custom">
-                <button @click="openCameraModal('check_image')" class="btn btn-primary custom-btn">
-                  <i class="fas fa-camera me-2"></i>Capture
-                </button>
-                <div class="file-input-container">
-                  <input
-                    type="file"
-                    id="check_image"
-                    @change="handleFileUpload('check_image', $event)"
-                    class="form-control border-0 d-none"
-                    accept="image/*"
-                  />
-                  <label for="check_image" class="btn btn-secondary custom-btn">
-                    <i class="fas fa-file-upload me-2"></i>Choose
-                  </label>
-                </div>
-              </div>
-              <label for="check_image" class="form-label notwrok">Check Image</label>
-            </div>
-          </div>
-
           <!-- Name and Father Name -->
           <div class="mb-3 d-flex justify-content-between">
             <div class="inputs position-relative w-48">
@@ -255,6 +163,19 @@
               />
               <label for="phone_number" class="form-label">Phone Number</label>
             </div>
+          </div>
+
+          <!-- Add Relationship field -->
+          <div class="mb-3 inputs position-relative">
+            <input
+              type="text"
+              id="relationship"
+              v-model="formData.relationship"
+              class="form-control border-0"
+              required
+              placeholder=" "
+            />
+            <label for="relationship" class="form-label">Relationship with Customer</label>
           </div>
 
           <!-- Address with Location Button -->
@@ -352,116 +273,13 @@
             <label for="years_of_experience" class="form-label">Years of Experience</label>
           </div>
 
-          <!-- Item Name and Model -->
-          <div class="mb-3 d-flex justify-content-between">
-            <div class="inputs position-relative w-48">
-              <label class="form-label notwrok">Item Name</label>
-              <div class="search-select-container">
-                <input
-                  type="text"
-                  v-model="productSearch"
-                  class="form-control search-input border-0"
-                  placeholder="Search Product..."
-                  @focus="showProductDropdown = true"
-                />
-                <div v-if="showProductDropdown" class="custom-dropdown">
-                  <template v-if="filteredProducts.length > 0">
-                    <div
-                      v-for="product in filteredProducts"
-                      :key="product.id"
-                      class="dropdown-item"
-                      @click="selectProduct(product)"
-                    >
-                      {{ product.item_name }}
-                    </div>
-                  </template>
-                  <template v-else>
-                    <div class="dropdown-item no-results">No products found</div>
-                  </template>
-                </div>
-                <input type="hidden" v-model="formData.item_name" required />
-              </div>
-            </div>
-            <div class="inputs position-relative w-48">
-              <input
-                type="text"
-                id="model"
-                v-model="formData.model"
-                class="form-control border-0"
-                required
-                placeholder=" "
-                @input="handleItemOrModelChange"
-              />
-              <label for="model" class="form-label">Model</label>
-            </div>
-          </div>
-
-          <!-- Installment Plan ID -->
-          <div class="mb-3 inputs position-relative">
-            <label class="form-label notwrok">Installment Plan</label>
-            <div class="search-select-container">
-              <input
-                type="text"
-                v-model="installmentPlanSearch"
-                class="form-control search-input border-0"
-                :placeholder="selectedPlan ? selectedPlan : 'Search Plan, Product or Model...'"
-                @focus="showInstallmentPlanDropdown = true"
-              />
-              <div v-if="showInstallmentPlanDropdown" class="custom-dropdown">
-                <template v-if="filteredInstallmentPlans.length > 0">
-                  <div
-                    v-for="plan in filteredInstallmentPlans"
-                    :key="plan.id"
-                    class="dropdown-item plan-item"
-                    @click="selectInstallmentPlan(plan)"
-                  >
-                    <div class="plan-header">
-                      <span class="plan-name">{{ plan.plan_name }}</span>
-                      <span class="product-name">{{ plan.Product_name }}</span>
-                    </div>
-                    <div class="plan-details">
-                      <div class="detail-row">
-                        <span class="detail-label">Product:</span>
-                        <span class="detail-value"
-                          >{{ plan.Product_name }} ({{ plan.Product_model }})</span
-                        >
-                      </div>
-                      <div class="detail-row">
-                        <span class="detail-label">Price:</span>
-                        <span class="detail-value">Rs. {{ plan.product_price }}</span>
-                      </div>
-                      <div class="detail-row">
-                        <span class="detail-label">Total:</span>
-                        <span class="detail-value">Rs. {{ plan.total_price }}</span>
-                      </div>
-                      <div class="detail-row">
-                        <span class="detail-label">Advance:</span>
-                        <span class="detail-value">Rs. {{ plan.advance }}</span>
-                      </div>
-                      <div class="detail-row">
-                        <span class="detail-label">Installment:</span>
-                        <span class="detail-value"
-                          >Rs. {{ plan.installment_price }} × {{ plan.installment_duration }}</span
-                        >
-                      </div>
-                    </div>
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="dropdown-item no-results">No installment plans found</div>
-                </template>
-              </div>
-              <input type="hidden" v-model="formData.installment_plan_id" required />
-            </div>
-          </div>
-
           <!-- Submit Button -->
           <button type="submit" class="btn signup-btn w-100 fw-bold" :disabled="loading">
             <span v-if="loading" class="loading-content">
               <i class="fa fa-spinner fa-spin me-2"></i> Submitting...
             </span>
             <span v-else class="button-content">
-              Add Customer
+              Add Guarantor
               <i class="fas fa-arrow-right ms-2"></i>
             </span>
           </button>
@@ -1461,45 +1279,6 @@ select.form-control option {
     display: none;
   }
 }
-
-/* Add these styles for product dropdown */
-.product-search-container {
-  position: relative;
-  width: 100%;
-}
-
-.search-input {
-  width: 100%;
-  padding: 8px 12px;
-}
-
-.custom-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  max-height: 200px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.dropdown-item {
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.dropdown-item:hover {
-  background-color: #f8f9fa;
-}
-
-.no-results {
-  color: #6c757d;
-  font-style: italic;
-}
 </style>
 
 <script>
@@ -1509,8 +1288,7 @@ import SuccessPopup from '@/components/SuccessPopup.vue'
 import ErrorPopup from '@/components/ErrorPopup.vue'
 import { Modal } from 'bootstrap'
 import { createWorker } from 'tesseract.js'
-import { Html5Qrcode } from 'html5-qrcode'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router' // Add this at the top with other imports
 
 export default {
   components: {
@@ -1529,26 +1307,23 @@ export default {
     const currentUserRole = ref(store.getters.userRole)
     const companies = ref([])
     const branches = ref([])
-    const router = useRouter()
+    const route = useRoute()
+    const router = useRouter() // Add this line near other refs
 
     const formData = ref({
+      customer_id: route.query.customer_id || null,
       name: '',
       father_name: '',
       phone_number: '',
       cnic: '',
+      relationship: '',
       address: '',
       office_address: '',
       employment_type: '',
       company_name: '',
       years_of_experience: '',
       cnic_front_image: null,
-      customer_image: null,
-      check_image: null,
-
       cnic_back_image: null,
-      item_name: '',
-      model: '',
-      installment_plan_id: '',
     })
 
     // Camera modal references
@@ -1575,7 +1350,7 @@ export default {
     const initWorker = async () => {
       worker.value = await createWorker('eng')
     }
-    // Computed property to format CNIC
+
     const formattedCnic = computed({
       get() {
         const cnic = formData.value.cnic
@@ -1752,8 +1527,6 @@ export default {
         currentImageType.value === 'customer_image' ? '.passport-guide' : '.card-guide',
       )
       const guideRect = guideElement.getBoundingClientRect()
-
-      // Create canvas with proper dimensions
       const canvas = document.createElement('canvas')
 
       // Calculate video to display ratio
@@ -1850,7 +1623,6 @@ export default {
 
     // Clean up on component unmount
     onBeforeUnmount(() => {
-      stopBarcodeScanner()
       stopScanner()
       // Remove event listeners
       document.removeEventListener('click', handleClickOutside)
@@ -1860,9 +1632,9 @@ export default {
     //            ON MOUNT
     // ===================================
     onMounted(() => {
+      console.log('Customer ID:', formData.value.customer_id)
       modal.value = new Modal(document.getElementById('scannerModal'))
       imagePreviewModal.value = new Modal(document.getElementById('imagePreviewModal'))
-      barcodeModal.value = new Modal(document.getElementById('barcodeModal'))
     })
 
     onMounted(async () => {
@@ -1886,24 +1658,23 @@ export default {
           cnic: formattedCnic.value,
         }
 
-        const result = await store.dispatch('customerStore/registerCustomer', payload)
+        const result = await store.dispatch('customerStore/registerGuarantor', payload)
 
         if (result.success) {
           showSuccess.value = true
           successMessage.value = result.message
-          const customerId = result.data.customer.id
           resetForm()
-          router.push({
-            name: 'AddGuarantor',
-            query: { customer_id: customerId },
-          })
+          setTimeout(() => {
+            router.push({ name: 'home' })
+          }, 1500)
         } else {
           showError.value = true
           errorMessage.value = result.message
-          console.error('Form submission error:', result.message)
 
+          // Handle validation errors
           if (result.errors) {
             validationErrors.value = result.errors
+            // Format validation messages for display
             Object.keys(result.errors).forEach((key) => {
               result.errors[key] = Array.isArray(result.errors[key])
                 ? result.errors[key]
@@ -1914,36 +1685,33 @@ export default {
       } catch (error) {
         console.error('Form submission error:', error)
         showError.value = true
-        errorMessage.value =
-          error.response?.data?.message || error.message || 'An unexpected error occurred'
+        errorMessage.value = 'An unexpected error occurred'
       } finally {
         loading.value = false
       }
     }
 
     const resetForm = () => {
+      const customerId = formData.value.customer_id // Store current customer_id
       formData.value = {
+        customer_id: customerId, // Keep the same customer_id
         name: '',
         father_name: '',
         phone_number: '',
         cnic: '',
+        relationship: '',
         address: '',
         office_address: '',
         employment_type: '',
         company_name: '',
         years_of_experience: '',
         cnic_front_image: null,
-        customer_image: null,
-        check_image: null,
         cnic_back_image: null,
-        item_name: '',
-        model: '',
-        installment_plan_id: '',
       }
       validationErrors.value = {}
 
       // Reset file inputs
-      const fileInputs = ['cnic_front_image', 'cnic_back_image', 'customer_image', 'check_image']
+      const fileInputs = ['cnic_front_image', 'cnic_back_image']
       fileInputs.forEach((field) => {
         const input = document.getElementById(field)
         if (input) {
@@ -2074,103 +1842,7 @@ export default {
       selectedImageUrl.value = ''
     }
 
-    // Add new refs for barcode scanner
-    const barcodeModal = ref(null)
-    const html5QrCode = ref(null)
-
-    const startScanner = async () => {
-      try {
-        html5QrCode.value = new Html5Qrcode('barcodeReader')
-        barcodeModal.value.show()
-
-        await html5QrCode.value.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          onScanSuccess,
-          onScanFailure,
-        )
-      } catch (err) {
-        console.error('Error starting scanner:', err)
-        showError.value = true
-        errorMessage.value = 'Could not start scanner. Please check camera permissions.'
-      }
-    }
-
-    const stopBarcodeScanner = async () => {
-      if (html5QrCode.value) {
-        try {
-          await html5QrCode.value.stop()
-          html5QrCode.value = null
-        } catch (err) {
-          console.error('Error stopping scanner:', err)
-        }
-      }
-      barcodeModal.value.hide()
-    }
-
-    const onScanSuccess = async (decodedText) => {
-      try {
-        await stopBarcodeScanner()
-        console.log('Scanned QR/Barcode:', decodedText)
-
-        // Parse the scanned data
-        const pairs = decodedText.split(',').map((item) => item.trim())
-
-        pairs.forEach((pair) => {
-          const [key, value] = pair.split(':').map((item) => item.trim())
-          switch (key.toLowerCase()) {
-            case 'item':
-            case 'name':
-            case 'item_name': // Add this case
-            case 'itemname': // Add this case
-              formData.value.item_name = value
-              productSearch.value = value // Add this line to update search input
-              break
-            case 'model':
-              formData.value.model = value
-              break
-          }
-        })
-
-        handleItemOrModelChange()
-
-        showSuccess.value = true
-        successMessage.value = 'Item details scanned successfully!'
-
-        setTimeout(() => {
-          showSuccess.value = false
-          successMessage.value = ''
-        }, 5000)
-      } catch (err) {
-        console.error('Scan processing error:', err)
-        showError.value = true
-        errorMessage.value = 'Error processing scanned data'
-
-        // Add timeout for error message as well
-        setTimeout(() => {
-          showError.value = false
-          errorMessage.value = ''
-        }, 5000)
-      }
-    }
-
-    const onScanFailure = (error) => {
-      // Silent failure - no need to show error to user
-      console.log('QR/Barcode scan failure:', error)
-    }
-
-    // Add cleanup on unmount
-    onBeforeUnmount(() => {
-      stopBarcodeScanner()
-      stopScanner()
-      // Remove event listeners
-      document.removeEventListener('click', handleClickOutside)
-    })
-
-    // Add these new refs
+    // Add these new refs for barcode scanner
     const installmentPlanSearch = ref('')
     const showInstallmentPlanDropdown = ref(false)
     const installmentPlans = ref([])
@@ -2208,7 +1880,6 @@ export default {
 
     const handleItemOrModelChange = () => {
       formData.value.installment_plan_id = ''
-
       showInstallmentPlanDropdown.value = true
 
       if (filteredInstallmentPlans.value.length === 1) {
@@ -2234,6 +1905,7 @@ export default {
       },
     )
 
+    // Add computed property for selected plan display
     const selectedPlan = computed(() => {
       const plan = installmentPlans.value.find((p) => p.id === formData.value.installment_plan_id)
       if (plan) {
@@ -2265,26 +1937,17 @@ export default {
 
     // Define click outside handler
     const handleClickOutside = (e) => {
-      const installmentDropdown = document.querySelector('.search-select-container')
-      const productDropdown = document.querySelector('.product-search-container')
-      if (
-        installmentDropdown &&
-        !installmentDropdown.contains(e.target) &&
-        productDropdown &&
-        !productDropdown.contains(e.target)
-      ) {
+      const dropdown = document.querySelector('.search-select-container')
+      if (dropdown && !dropdown.contains(e.target)) {
         showInstallmentPlanDropdown.value = false
-        showProductDropdown.value = false
       }
     }
 
     // Update onMounted to add event listener
     onMounted(() => {
       fetchInstallmentPlans()
-      fetchProducts()
       modal.value = new Modal(document.getElementById('scannerModal'))
       imagePreviewModal.value = new Modal(document.getElementById('imagePreviewModal'))
-      barcodeModal.value = new Modal(document.getElementById('barcodeModal'))
       // Add click outside listener
       document.addEventListener('click', handleClickOutside)
     })
@@ -2407,40 +2070,6 @@ export default {
         'error-border': validationErrors.value[fieldName]?.length > 0,
       }
     }
-    // Add new refs for product search
-    const productSearch = ref('')
-    const showProductDropdown = ref(false)
-    const products = ref([])
-
-    // Add computed for filtered products
-    const filteredProducts = computed(() => {
-      if (!productSearch.value) return products.value
-      const searchTerm = productSearch.value.toLowerCase()
-      return products.value.filter((product) =>
-        product.item_name.toLowerCase().includes(searchTerm),
-      )
-    })
-    const fetchProducts = async () => {
-      try {
-        const result = await store.dispatch('getAllInventory')
-        if (result.success) {
-          products.value = result.data.inventory || []
-        } else {
-          console.error('Failed to load products:', result.message)
-        }
-      } catch (error) {
-        console.error('Error in fetchProducts:', error)
-      }
-    }
-
-    // Update product selection method to include model
-    const selectProduct = (product) => {
-      formData.value.item_name = product.item_name
-      formData.value.model = product.model
-      productSearch.value = product.item_name
-      showProductDropdown.value = false
-      handleItemOrModelChange() // Trigger installment plan filtering
-    }
 
     return {
       loading,
@@ -2486,12 +2115,6 @@ export default {
       selectedImageUrl,
       openImagePreview,
       closeImagePreview,
-      barcodeModal,
-      html5QrCode,
-      startScanner,
-      stopBarcodeScanner,
-      onScanSuccess,
-      onScanFailure,
       installmentPlanSearch,
       showInstallmentPlanDropdown,
       installmentPlans,
@@ -2506,12 +2129,6 @@ export default {
       getCurrentOfficeLocation,
       getInputClass,
       formattedCnic,
-      productSearch,
-      showProductDropdown,
-      products,
-      filteredProducts,
-      fetchProducts,
-      selectProduct,
     }
   },
 }

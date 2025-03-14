@@ -104,11 +104,13 @@ const setupPassword = async () => {
     loading.value = false
   }
 }
-
 onMounted(() => {
-  if (!route.query.email || !route.query.token) {
-    router.push('/login')
-  }
+  onMounted(() => {
+    if (!route.query.email || !route.query.token) {
+      message.value = 'Invalid or missing credentials. Please check your email link.'
+      return
+    }
+  })
 })
 </script>
 
