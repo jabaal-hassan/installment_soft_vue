@@ -352,6 +352,25 @@
             </div>
           </div>
         </div>
+        <div class="info-card">
+          <h4 class="text-center">Installment Table</h4>
+          <div class="info-row">
+            <span class="label">Duration</span>
+            <span class="value">{{ customerAccount.installment_duration }} months</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Monthly Amount</span>
+            <span class="value">Rs. {{ customerAccount.installment_price }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Remaining</span>
+            <span class="value highlight">Rs. {{ customerAccount.remaining_amount }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Paid Amount</span>
+            <span class="value success">Rs. {{ customerAccount.amount_paid }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -852,7 +871,7 @@ const printCustomerDetails = () => {
   align-items: center;
   gap: 10px;
   background: linear-gradient(180deg, #4199d0, #7c50c8);
-  -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
