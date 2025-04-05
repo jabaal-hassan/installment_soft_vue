@@ -74,6 +74,17 @@ const mutations = {
   SET_GUARANTORS(state, guarantors) {
     state.guarantors = guarantors
   },
+  SET_iNSTALLMENT_TABLE(state, installmentTable) {
+    state.installmentTable = installmentTable
+  },
+  UPDATE_INSTALLMENT_STATUS(state, { id, status }) {
+    if (state.installmentTable) {
+      const installment = state.installmentTable.find((i) => i.id === id)
+      if (installment) {
+        installment.status = status
+      }
+    }
+  },
 }
 
 const actions = {
@@ -510,6 +521,7 @@ const actions = {
         commit('SET_SALE', response.data.sale)
         commit('SET_CUSTOMER_ACCOUNT', response.data.customerAccount)
         commit('SET_GUARANTORS', response.data.guarantors)
+        commit('SET_iNSTALLMENT_TABLE', response.data.installmentTable)
         return {
           success: true,
           message: response.message || 'Customer details fetched successfully',
@@ -523,6 +535,44 @@ const actions = {
       return {
         success: false,
         message: error.message,
+      }
+    } finally {
+      commit('SET_LOADING', false)
+    }
+  },
+
+  /************************************ Update Installment Status ************************************/
+  async updateInstallmentStatus({ commit }, installmentId) {
+    commit('SET_LOADING', true)
+    try {
+      const response = await AuthApiServices.PostRequest(
+        `/update-installment-table/${installmentId}`,
+        {
+          status: 'received',
+        },
+      )
+
+      if (response.message === 'Installment updated successfully') {
+        commit('UPDATE_INSTALLMENT_STATUS', { id: installmentId, status: 'received' })
+        return {
+          success: true,
+          message: response.message,
+        }
+      }
+      throw new Error(response.message || 'Failed to update installment')
+    } catch (error) {
+      console.error('Error updating installment:', error)
+
+      if (error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response.data.message,
+          errors: error.response?.data?.errors || {},
+        }
+      }
+      return {
+        success: false,
+        message: error.message || 'Failed to update installment',
       }
     } finally {
       commit('SET_LOADING', false)

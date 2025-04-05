@@ -84,6 +84,15 @@
               </li>
               <li
                 class="dropdown-submenu"
+                @mouseenter="openDropdown('installmentTableDropdown')"
+                @mouseleave="closeDropdown('installmentTableDropdown')"
+              >
+                <router-link to="/dashboard/installment-table" class="dropdown-item">
+                  <i class="fas fa-users-viewfinder me-2"></i> Installment Table
+                </router-link>
+              </li>
+              <li
+                class="dropdown-submenu"
                 @mouseenter="openDropdown('viewCustomerDropdown')"
                 @mouseleave="closeDropdown('viewCustomerDropdown')"
               >

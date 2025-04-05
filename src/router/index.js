@@ -27,7 +27,7 @@ const routes = [
         path: 'add-employee',
         name: 'add-employee',
         component: AddEmployee,
-        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] }, // Protect route with both 'admin' and 'branch admin' roles
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin'] },
       },
       {
         path: '/dashboard/add-company',
@@ -120,6 +120,12 @@ const routes = [
         path: '/dashboard/inquiry-customers',
         name: 'InquiryCustomers',
         component: () => import('@/components/dashboard/Admin/InquiryCustomerView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
+      },
+      {
+        path: '/dashboard/installment-table',
+        name: 'InstallmentTable',
+        component: () => import('@/components/dashboard/Admin/InstallmentTable.vue'),
         meta: { requiresAuth: true, roles: ['admin', 'company admin', 'branch admin', 'employee'] },
       },
     ],
