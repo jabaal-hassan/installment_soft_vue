@@ -579,8 +579,51 @@ const openImage = (imageUrl) => {
 }
 
 // Add print function
+// Add print function
 const printCustomerDetails = () => {
   const printWindow = window.open('', '_blank')
+
+  // Create installment table HTML
+  let installmentTableHTML = `
+    <div class="section full-width">
+      <div class="section-title">Installment Table</div>
+      <table class="installment-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Receiving Date</th>
+          </tr>
+        </thead>
+        <tbody>
+  `
+
+  // Add rows to installment table
+  installmentTable.value.forEach((installment, index) => {
+    const receivingDate = isUpdateDifferent(installment.created_at, installment.updated_at)
+      ? formatDateTime(installment.updated_at)
+      : '-'
+
+    installmentTableHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${installment.product_name}</td>
+        <td>${formatDate(installment.installment_date)}</td>
+        <td>Rs. ${installment.installment_price}</td>
+        <td>${installment.status}</td>
+        <td>${receivingDate}</td>
+      </tr>
+    `
+  })
+
+  installmentTableHTML += `
+        </tbody>
+      </table>
+    </div>
+  `
 
   const content = `
     <html>
@@ -598,7 +641,7 @@ const printCustomerDetails = () => {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             padding-bottom: 10px;
             border-bottom: 2px solid #333;
           }
@@ -633,6 +676,9 @@ const printCustomerDetails = () => {
             padding: 15px;
             border-radius: 8px;
           }
+          .full-width {
+            grid-column: 1 / -1;
+          }
           .section-title {
             font-size: 16px;
             font-weight: bold;
@@ -654,12 +700,38 @@ const printCustomerDetails = () => {
           .value {
             color: #333;
           }
+          .installment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 12px;
+          }
+          .installment-table th, .installment-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+          }
+          .installment-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+          }
+          .installment-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
+          .address-value {
+            max-width: 200px;
+            word-wrap: break-word;
+            text-align: right;
+          }
           @media print {
             body {
               padding: 0;
               margin: 0;
             }
             .main-content {
+              page-break-inside: avoid;
+            }
+            .installment-table {
               page-break-inside: avoid;
             }
           }
@@ -692,6 +764,10 @@ const printCustomerDetails = () => {
             <div class="info-row">
               <span class="label">Phone:</span>
               <span class="value">${customer.value.phone_number}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Address:</span>
+              <span class="value address-value">${customer.value.address || 'N/A'}</span>
             </div>
           </div>
 
@@ -733,6 +809,10 @@ const printCustomerDetails = () => {
               <span class="label">Relationship:</span>
               <span class="value">${guarantors.value.relationship}</span>
             </div>
+            <div class="info-row">
+              <span class="label">Address:</span>
+              <span class="value address-value">${guarantors.value.address || 'N/A'}</span>
+            </div>
           </div>
 
           <div class="section">
@@ -754,6 +834,8 @@ const printCustomerDetails = () => {
               <span class="value">Rs. ${customerAccount.value.amount_paid}</span>
             </div>
           </div>
+
+          ${installmentTableHTML}
         </div>
       </body>
     </html>
