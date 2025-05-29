@@ -54,13 +54,8 @@
 
         <div class="profile-info">
           <div class="name-section">
-            <h2 class="customer-name">
-              {{ customer.name }}
-              <span class="verify-badge" title="Verified Customer">
-                <i class="fas fa-check-circle"></i>
-              </span>
-            </h2>
-            <h3 class="customer-name">{{ customer.father_name }}</h3>
+            <h2 class="customer-name">Name: {{ customer.name }}</h2>
+            <h3 class="customer-name">Father: {{ customer.father_name }}</h3>
           </div>
 
           <div class="details-section">
@@ -336,7 +331,17 @@
             <h4>Installment Details</h4>
             <div class="info-row">
               <span class="label">Duration</span>
-              <span class="value">{{ customerAccount.installment_duration }} months</span>
+              <span class="value">
+    {{ customerAccount.installment_duration }}
+    <span v-if="customerAccount.installment_duration === 11">months</span>
+    <span v-else-if="customerAccount.installment_duration === 24">weeks</span>
+    <span v-else-if="customerAccount.installment_duration >= 30">daily</span>
+    <span v-else>Installments</span>
+  </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Product</span>
+              <span class="value">{{ customerAccount.product_name }}</span>
             </div>
             <div class="info-row">
               <span class="label">Monthly Amount</span>
@@ -352,24 +357,61 @@
             </div>
           </div>
         </div>
-        <div class="info-card">
+        <div class="info-card installment-table-card">
           <h4 class="text-center">Installment Table</h4>
-          <div class="info-row">
-            <span class="label">Duration</span>
-            <span class="value">{{ customerAccount.installment_duration }} months</span>
+          <!-- Success Message -->
+          <div v-if="showSuccess" class="alert alert-success">
+            {{ successMessage }}
           </div>
-          <div class="info-row">
-            <span class="label">Monthly Amount</span>
-            <span class="value">Rs. {{ customerAccount.installment_price }}</span>
+
+          <!-- Error Message -->
+          <div v-if="showError" class="alert alert-danger">
+            {{ errorMessage }}
           </div>
-          <div class="info-row">
-            <span class="label">Remaining</span>
-            <span class="value highlight">Rs. {{ customerAccount.remaining_amount }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Paid Amount</span>
-            <span class="value success">Rs. {{ customerAccount.amount_paid }}</span>
-          </div>
+          <table class="installment-table">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Product</th>
+                <th>Officer</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Receiving Data</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(installment, index) in installmentTable" :key="installment.id">
+                <td>{{ index + 1 }}</td>
+                <td>{{ installment.product_name }}</td>
+                <td>{{ installment.recived_officer_name || 'N/A' }}</td>
+                <td>{{ formatDate(installment.installment_date) }}</td>
+                <td>Rs. {{ installment.installment_price }}</td>
+                <td>
+                  <span class="status-pill" :class="installment.status">
+                    {{ installment.status }}
+                  </span>
+                </td>
+                <td>
+                  <span v-if="isUpdateDifferent(installment.created_at, installment.updated_at)">
+                    {{ formatDateTime(installment.updated_at) }}
+                  </span>
+                  <span v-else>-</span>
+                </td>
+                <td>
+                  <button
+                    v-if="installment.status === 'pending'"
+                    class="action-btn pay-btn"
+                    @click="handlePayment(installment)"
+                  >
+                    Pay Now
+                  </button>
+                  <span v-else class="paid-text">Paid</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -389,6 +431,7 @@ const customer = ref({})
 const sale = ref({})
 const customerAccount = ref({})
 const guarantors = ref({})
+const installmentTable = ref([])
 const loading = ref(false)
 const error = ref(null)
 const successMessage = ref('')
@@ -410,6 +453,60 @@ const formattedSaleDate = computed(() => {
   return sale.value.created_at ? sale.value.created_at.split('T')[0] : 'N/A'
 })
 
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const formatDateTime = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+const isUpdateDifferent = (created, updated) => {
+  return created !== updated
+}
+
+/************************************ handle Payment ************************************/
+
+const handlePayment = async (installment) => {
+  try {
+    const result = await store.dispatch('customerStore/updateInstallmentStatus', installment.id)
+    if (result.success) {
+      // Show success message
+      successMessage.value = 'Payment received successfully'
+      showSuccess.value = true
+      setTimeout(() => {
+        showSuccess.value = false
+      }, 3000)
+    } else {
+      // Show error message
+      errorMessage.value = result.message
+      showError.value = true
+      setTimeout(() => {
+        showError.value = false
+      }, 3000)
+    }
+  } catch (error) {
+    console.error('Error processing payment:', error)
+    errorMessage.value = 'Failed to process payment'
+    showError.value = true
+    setTimeout(() => {
+      showError.value = false
+    }, 3000)
+  }
+}
+
 onMounted(async () => {
   const customerId = route.params.customer_id
   if (customerId) {
@@ -421,6 +518,7 @@ onMounted(async () => {
       sale.value = result.data.sale
       customerAccount.value = result.data.customerAccount
       guarantors.value = result.data.guarantors
+      installmentTable.value = result.data.installmentTable || []
     } else {
       error.value = result.message || 'Failed to fetch customer details'
     }
@@ -487,8 +585,51 @@ const openImage = (imageUrl) => {
 }
 
 // Add print function
+// Add print function
 const printCustomerDetails = () => {
   const printWindow = window.open('', '_blank')
+
+  // Create installment table HTML
+  let installmentTableHTML = `
+    <div class="section full-width">
+      <div class="section-title">Installment Table</div>
+      <table class="installment-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Receiving Date</th>
+          </tr>
+        </thead>
+        <tbody>
+  `
+
+  // Add rows to installment table
+  installmentTable.value.forEach((installment, index) => {
+    const receivingDate = isUpdateDifferent(installment.created_at, installment.updated_at)
+      ? formatDateTime(installment.updated_at)
+      : '-'
+
+    installmentTableHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${installment.product_name}</td>
+        <td>${formatDate(installment.installment_date)}</td>
+        <td>Rs. ${installment.installment_price}</td>
+        <td>${installment.status}</td>
+        <td>${receivingDate}</td>
+      </tr>
+    `
+  })
+
+  installmentTableHTML += `
+        </tbody>
+      </table>
+    </div>
+  `
 
   const content = `
     <html>
@@ -506,7 +647,7 @@ const printCustomerDetails = () => {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             padding-bottom: 10px;
             border-bottom: 2px solid #333;
           }
@@ -541,6 +682,9 @@ const printCustomerDetails = () => {
             padding: 15px;
             border-radius: 8px;
           }
+          .full-width {
+            grid-column: 1 / -1;
+          }
           .section-title {
             font-size: 16px;
             font-weight: bold;
@@ -562,12 +706,38 @@ const printCustomerDetails = () => {
           .value {
             color: #333;
           }
+          .installment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 12px;
+          }
+          .installment-table th, .installment-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+          }
+          .installment-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+          }
+          .installment-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
+          .address-value {
+            max-width: 200px;
+            word-wrap: break-word;
+            text-align: right;
+          }
           @media print {
             body {
               padding: 0;
               margin: 0;
             }
             .main-content {
+              page-break-inside: avoid;
+            }
+            .installment-table {
               page-break-inside: avoid;
             }
           }
@@ -600,6 +770,10 @@ const printCustomerDetails = () => {
             <div class="info-row">
               <span class="label">Phone:</span>
               <span class="value">${customer.value.phone_number}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Address:</span>
+              <span class="value address-value">${customer.value.address || 'N/A'}</span>
             </div>
           </div>
 
@@ -641,6 +815,10 @@ const printCustomerDetails = () => {
               <span class="label">Relationship:</span>
               <span class="value">${guarantors.value.relationship}</span>
             </div>
+            <div class="info-row">
+              <span class="label">Address:</span>
+              <span class="value address-value">${guarantors.value.address || 'N/A'}</span>
+            </div>
           </div>
 
           <div class="section">
@@ -662,6 +840,8 @@ const printCustomerDetails = () => {
               <span class="value">Rs. ${customerAccount.value.amount_paid}</span>
             </div>
           </div>
+
+          ${installmentTableHTML}
         </div>
       </body>
     </html>
@@ -860,31 +1040,59 @@ const printCustomerDetails = () => {
 }
 
 .name-section {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 1rem;
 }
 
 .customer-name {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: linear-gradient(180deg, #4199d0, #7c50c8);
+  background: linear-gradient(135deg, #3a7bd5, #9500ff);
   background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  text-shadow: 0px 2px 10px rgba(154, 85, 255, 0.2);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  position: relative;
+  padding-bottom: 5px;
+}
+
+.customer-name::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 115px;
+  height: 3px;
+  background: #9500ff;
+  border-radius: 5px;
 }
 
 .father-name {
-  font-size: 18px;
-  color: #666;
-  margin: 5px 0 0 0;
+  font-size: 1.1rem;
+  margin: 10px 0 0 0;
+  color: #555;
   font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
-.verify-badge {
-  color: #4158d0;
-  font-size: 20px;
+.father-name::before {
+  content: '•';
+  margin-right: 8px;
+  color: #9500ff;
+  font-size: 1.5rem;
+}
+
+.father-name span {
+  background: linear-gradient(135deg, #3a7bd5, #9500ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
 }
 
 .status-actions-cell {
@@ -1169,5 +1377,87 @@ const printCustomerDetails = () => {
 .action-button.print:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+
+/* Installment Table Styles */
+.installment-table-card {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.installment-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: white;
+  border-radius: 8px;
+}
+
+.installment-table th,
+.installment-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.installment-table th {
+  background: #f8fafc;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.installment-table tr:hover {
+  background: #f8fafc;
+}
+
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-pill.pending {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.status-pill.paid {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pay-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.pay-btn:hover {
+  background: #2563eb;
+}
+
+.paid-text {
+  color: #15803d;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.installment-table td {
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

@@ -1,13 +1,14 @@
 <template>
   <div class="dashboard-view">
-    <!-- Conditionally render based on isAdminOrBranchAdmin -->
-    <router-view v-if="isAdminOrBranchAdmin" />
+    <HomeDashboard v-if="$route.path === '/dashboard'" />
+    <router-view v-else />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useStore } from 'vuex'
+import HomeDashboard from '@/components/dashboard/Home/HomeDashboard.vue'
 
 const store = useStore()
 const userRole = computed(() => store.getters.getUserRole)
@@ -24,5 +25,8 @@ const isAdminOrBranchAdmin = computed(() => {
 </script>
 
 <style scoped>
-/* Add any specific styles here */
+.dashboard-view {
+  min-height: 100vh;
+  background: #f8f9fe;
+}
 </style>
