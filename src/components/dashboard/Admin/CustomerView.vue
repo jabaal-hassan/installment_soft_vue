@@ -332,12 +332,12 @@
             <div class="info-row">
               <span class="label">Duration</span>
               <span class="value">
-    {{ customerAccount.installment_duration }}
-    <span v-if="customerAccount.installment_duration === 11">months</span>
-    <span v-else-if="customerAccount.installment_duration === 24">weeks</span>
-    <span v-else-if="customerAccount.installment_duration >= 30">daily</span>
-    <span v-else>Installments</span>
-  </span>
+                {{ customerAccount.installment_duration }}
+                <span v-if="customerAccount.installment_duration === 11">months</span>
+                <span v-else-if="customerAccount.installment_duration === 24">weeks</span>
+                <span v-else-if="customerAccount.installment_duration >= 30">daily</span>
+                <span v-else>Installments</span>
+              </span>
             </div>
             <div class="info-row">
               <span class="label">Product</span>
@@ -377,7 +377,7 @@
                 <th>Date</th>
                 <th>Amount</th>
                 <th>Status</th>
-                <th>Receiving Data</th>
+                <th>Receiving Date</th>
                 <th>Actions</th>
               </tr>
             </thead>

@@ -1,56 +1,57 @@
 <template>
-  
-<!-- Header Section -->
-    <div class="header-section">
-      <div class="header-container">
-        <!-- Title and Actions -->
-        <div class="title-bar">
-          <div class="title-wrapper">
-            <i class="fas fa-file-invoice-dollar title-icon"></i>
-            <h2 class="section-title">Installment Table</h2>
-          </div>
-          <div class="header-actions">
-            <button class="action-button print" @click="printCustomerDetails">
-              <i class="fas fa-print"></i>
-              <span>Print Details</span>
-              <div class="button-glow"></div>
-            </button>
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-container">
+      <!-- Title and Actions -->
+      <div class="title-bar">
+        <div class="title-wrapper">
+          <i class="fas fa-file-invoice-dollar title-icon"></i>
+          <h2 class="section-title">Installment Table</h2>
+        </div>
+        <div class="header-actions">
+          <button class="action-button print" @click="printCustomerDetails">
+            <i class="fas fa-print"></i>
+            <span>Print Details</span>
+            <div class="button-glow"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="search-filter-container">
+        <!-- Search Box -->
+        <div class="search-wrapper">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              v-model="searchQuery"
+              class="search-input"
+              :placeholder="searchPlaceholder"
+            />
           </div>
         </div>
 
-        <!-- Search and Filters -->
-        <div class="search-filter-container">
-          <!-- Search Box -->
-          <div class="search-wrapper">
-            <div class="search-box">
-              <i class="fas fa-search search-icon"></i>
-              <input
-                type="text"
-                v-model="searchQuery"
-                class="search-input"
-                :placeholder="searchPlaceholder"
-              />
-            </div>
-          </div>
-
-          <!-- Filter Controls -->
-          <div class="filter-controls">
-            <select v-model="statusFilter" class="filter-select">
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="overdue">Overdue</option>
-            </select>
-            <button @click="resetFilters" class="reset-button">Reset</button>
-          </div>
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+          <select v-model="statusFilter" class="filter-select">
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <button @click="resetFilters" class="reset-button">Reset</button>
         </div>
       </div>
     </div>
+  </div>
 
-
-
-
-
-
+  <!-- Success and Error Messages -->
+  <div v-if="showSuccess" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+  <div v-if="showError" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
 
   <div class="main-container">
     <!-- Stats Overview -->
@@ -70,7 +71,7 @@
     </div>
 
     <!-- Previous Month's Installments -->
-    <div class="table-container">
+    <div class="table-container" v-if="previousMonthInstallments.length > 0">
       <div class="section-header">
         <div class="section-title-wrapper">
           <i class="fas fa-history section-icon"></i>
@@ -107,31 +108,26 @@
               <td>
                 <div class="date-info">
                   <span class="due-date">{{ formatDate(installment.installment_date) }}</span>
-                  <span :class="{'days-overdue': isOverdue(installment)}">
+                  <span :class="{ 'days-overdue': isOverdue(installment) }">
                     {{ getDaysUntilDue(installment) }}
                   </span>
                 </div>
               </td>
               <td>Rs. {{ formatPrice(installment.installment_price) }}</td>
               <td>
-                <span
-                  class="status-badge"
-                  :class="isOverdue(installment) ? 'overdue' : 'pending'"
-                >
+                <span class="status-badge" :class="isOverdue(installment) ? 'overdue' : 'pending'">
                   {{ isOverdue(installment) ? 'Overdue' : 'Pending' }}
                 </span>
               </td>
               <td>
-                <button @click="viewDetails(installment)" class="action-btn view-btn">
-                  View
-                </button>
+                <button @click="viewDetails(installment)" class="action-btn view-btn">View</button>
                 <button
-                    v-if="installment.status === 'pending'"
-                    class="action-btn pay-btn"
-                    @click="handlePayment(installment)"
-                  >
-                    Pay Now
-                  </button>
+                  v-if="installment.status === 'pending'"
+                  class="action-btn mark-paid-btn"
+                  @click="handlePayment(installment)"
+                >
+                  Pay Now
+                </button>
               </td>
             </tr>
           </tbody>
@@ -146,7 +142,15 @@
           <i class="fas fa-calendar-alt section-icon"></i>
           <h2 class="section-heading">Current Month's Installments</h2>
         </div>
+
         <div class="section-divider"></div>
+        <!-- Success and Error Messages -->
+        <div v-if="showSuccess" class="alert alert-success">
+          {{ successMessage }}
+        </div>
+        <div v-if="showError" class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table>
@@ -177,25 +181,24 @@
               <td>
                 <div class="date-info">
                   <span class="due-date">{{ formatDate(installment.installment_date) }}</span>
-                  <span :class="{'days-overdue': isOverdue(installment)}">
+                  <span :class="{ 'days-overdue': isOverdue(installment) }">
                     {{ getDaysUntilDue(installment) }}
                   </span>
                 </div>
               </td>
               <td>Rs. {{ formatPrice(installment.installment_price) }}</td>
               <td>
-                <span
-                  class="status-badge"
-                  :class="isOverdue(installment) ? 'overdue' : 'pending'"
-                >
+                <span class="status-badge" :class="isOverdue(installment) ? 'overdue' : 'pending'">
                   {{ isOverdue(installment) ? 'Overdue' : 'Pending' }}
                 </span>
               </td>
               <td>
-                <button @click="viewDetails(installment)" class="action-btn view-btn">
-                  View
-                </button>
-                <button @click="markPaid(installment.id)" class="action-btn mark-paid-btn">
+                <button @click="viewDetails(installment)" class="action-btn view-btn">View</button>
+                <button
+                  v-if="installment.status === 'pending'"
+                  class="action-btn mark-paid-btn"
+                  @click="handlePayment(installment)"
+                >
                   Pay Now
                 </button>
               </td>
@@ -206,22 +209,17 @@
     </div>
 
     <!-- Details Modal -->
-    <div v-if="selectedInstallment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full modal-backdrop">
-      <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white modal-content">
-        <div class="flex justify-between items-center pb-3">
+    <div
+      v-if="selectedInstallment"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full modal-backdrop"
+    >
+      <div
+        class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white modal-content"
+      >
+        <div class="flex justify-between items-start pb-3">
           <h3 class="text-xl font-semibold">Installment Details</h3>
-          <button
-            @click="selectedInstallment = null"
-            class="text-gray-400 hover:text-gray-500 focus:outline-none close-button"
-          >
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+          <button @click="closeDetails" class="close-button">
+            <i class="fas fa-times text-xl"></i>
           </button>
         </div>
         <div class="mt-4">
@@ -285,7 +283,7 @@ const filteredInstallments = computed(() => {
       (item) =>
         (item.customer?.name || '').toLowerCase().includes(query) ||
         (item.customer?.id || '').toString().includes(query) ||
-        (item.id || '').toString().includes(query)
+        (item.id || '').toString().includes(query),
     )
   }
   if (statusFilter.value === 'overdue') {
@@ -297,14 +295,14 @@ const filteredInstallments = computed(() => {
 })
 
 const currentMonthInstallments = computed(() =>
-  filteredInstallments.value.filter(item => {
+  filteredInstallments.value.filter((item) => {
     const dueDate = new Date(item.installment_date)
     return dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear
-  })
+  }),
 )
 
 const previousMonthInstallments = computed(() =>
-  filteredInstallments.value.filter(item => {
+  filteredInstallments.value.filter((item) => {
     const dueDate = new Date(item.installment_date)
     let prevMonth = currentMonth - 1
     let prevYear = currentYear
@@ -313,7 +311,7 @@ const previousMonthInstallments = computed(() =>
       prevYear--
     }
     return dueDate.getMonth() === prevMonth && dueDate.getFullYear() === prevYear
-  })
+  }),
 )
 
 function calculateTotalDue() {
@@ -383,20 +381,31 @@ function viewDetails(installment) {
   selectedInstallment.value = installment
 }
 
+function closeDetails() {
+  selectedInstallment.value = null
+}
+
 /************************************ handle Payment ************************************/
+
+const successMessage = ref('')
+const errorMessage = ref('')
+const showSuccess = ref(false)
+const showError = ref(false)
 
 const handlePayment = async (installment) => {
   try {
     const result = await store.dispatch('customerStore/updateInstallmentStatus', installment.id)
     if (result.success) {
-      // Show success message
       successMessage.value = 'Payment received successfully'
       showSuccess.value = true
+
+      // Refresh data
+      await fetchInstallments()
+
       setTimeout(() => {
         showSuccess.value = false
       }, 3000)
     } else {
-      // Show error message
       errorMessage.value = result.message
       showError.value = true
       setTimeout(() => {
@@ -513,8 +522,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-
-
 .search-box {
   position: relative;
   background: rgba(255, 255, 255, 0.1);
@@ -538,7 +545,7 @@ onMounted(() => {
 .search-input {
   width: 100%;
   height: 44px;
-  padding: 0 16px 0 48px; 
+  padding: 0 16px 0 48px;
   background: transparent;
   border: none;
   color: white;
@@ -548,7 +555,6 @@ onMounted(() => {
 
 .search-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
- 
 }
 
 .search-input:focus {
@@ -572,7 +578,7 @@ onMounted(() => {
 }
 
 .filter-select option {
-  background: #2A2F4E;
+  background: #2a2f4e;
   color: white;
 }
 
@@ -606,21 +612,21 @@ table {
 }
 
 th {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 16px;
-  background: #F9FAFB;
-  border-bottom: 1px solid #E5E7EB;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 td {
   padding: 16px;
   font-size: 14px;
   color: #374151;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 /* Status Badge */
@@ -635,13 +641,13 @@ td {
 }
 
 .status-badge.overdue {
-  background-color: #FEE2E2;
-  color: #DC2626;
+  background-color: #fee2e2;
+  color: #dc2626;
 }
 
 .status-badge.pending {
-  background-color: #FEF3C7;
-  color: #D97706;
+  background-color: #fef3c7;
+  color: #d97706;
 }
 
 /* Action Buttons */
@@ -656,24 +662,26 @@ td {
 }
 
 .view-btn {
-  color: #2563EB;
-  border-color: #BFDBFE;
-  background: #EFF6FF;
+  color: #2563eb;
+  border-color: #bfdbfe;
+  background: #eff6ff;
   margin-right: 8px;
 }
 
 .view-btn:hover {
-  background: #DBEAFE;
+  background: #dbeafe;
 }
 
-.mark-paid-btn {
-  color: #059669;
-  border-color: #A7F3D0;
-  background: #ECFDF5;
+.mark-paid-btn,
+.pay-btn {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #dcfce7;
 }
 
-.mark-paid-btn:hover {
-  background: #D1FAE5;
+.mark-paid-btn:hover,
+.pay-btn:hover {
+  background: #86efac;
 }
 
 /* Customer Info */
@@ -687,12 +695,12 @@ td {
   width: 40px;
   height: 40px;
   border-radius: 9999px;
-  background: #E5E7EB;
+  background: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: #4B5563;
+  color: #4b5563;
 }
 
 .customer-details {
@@ -707,7 +715,7 @@ td {
 
 .customer-id {
   font-size: 12px;
-  color: #6B7280;
+  color: #6b7280;
 }
 
 /* Date Display */
@@ -723,7 +731,7 @@ td {
 
 .days-overdue {
   font-size: 12px;
-  color: #DC2626;
+  color: #dc2626;
 }
 
 /* Main Container */
@@ -758,9 +766,15 @@ td {
   font-weight: 700;
 }
 
-.stats-value-blue { color: #2563EB; }
-.stats-value-green { color: #059669; }
-.stats-value-red { color: #DC2626; }
+.stats-value-blue {
+  color: #2563eb;
+}
+.stats-value-green {
+  color: #059669;
+}
+.stats-value-red {
+  color: #dc2626;
+}
 
 /* Filter Section */
 .filter-container {
@@ -884,10 +898,16 @@ td {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: color 0.2s ease;
+  position: absolute;
+  top: -5px;
+  right: 7px;
+  color: red;
+  font-size: 30px;
 }
 
 .close-button:hover {
-  background-color: #F3F4F6;
+  transform: scale(1.1);
 }
 
 /* Section Headers */
@@ -938,12 +958,32 @@ td {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Alert Messages */
+.alert {
+  padding: 1rem;
+  margin: 1rem 2rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.alert-success {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.alert-danger {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .search-filter-container {
     flex-direction: column;
   }
-   .action-button {
+  .action-button {
     padding: 8px 16px;
     font-size: 0.8rem;
   }
@@ -951,7 +991,7 @@ td {
     width: 100%;
     max-width: none;
   }
-  
+
   .filter-controls {
     width: 100%;
     justify-content: space-between;
