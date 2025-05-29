@@ -331,7 +331,13 @@
             <h4>Installment Details</h4>
             <div class="info-row">
               <span class="label">Duration</span>
-              <span class="value">{{ customerAccount.installment_duration }} months</span>
+              <span class="value">
+    {{ customerAccount.installment_duration }}
+    <span v-if="customerAccount.installment_duration === 11">months</span>
+    <span v-else-if="customerAccount.installment_duration === 24">weeks</span>
+    <span v-else-if="customerAccount.installment_duration >= 30">daily</span>
+    <span v-else>Installments</span>
+  </span>
             </div>
             <div class="info-row">
               <span class="label">Product</span>

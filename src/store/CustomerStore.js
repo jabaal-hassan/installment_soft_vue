@@ -16,6 +16,7 @@ const state = {
   sale: [],
   customerAccount: [],
   guarantors: [],
+  installments: [], // <-- add this
 }
 
 const mutations = {
@@ -84,6 +85,9 @@ const mutations = {
         installment.status = status
       }
     }
+  },
+  SET_INSTALLMENTS(state, installments) {
+    state.installments = installments
   },
 }
 
@@ -578,6 +582,33 @@ const actions = {
       commit('SET_LOADING', false)
     }
   },
+
+  /************************************ fetch Pending Installments ************************************/
+  async fetchPendingInstallments({ commit }) {
+    commit('SET_LOADING', true)
+    commit('SET_ERROR', null)
+    try {
+      const response = await AuthApiServices.GetRequest('/get-current-month-installments')
+      if (response.message === 'Pending installments retrieved successfully' && Array.isArray(response.data)) {
+        commit('SET_INSTALLMENTS', response.data)
+        return {
+          success: true,
+          message: response.message,
+          installments: response.data,
+        }
+      }
+      throw new Error(response.message || 'Failed to fetch installments')
+    } catch (error) {
+      commit('SET_ERROR', error.message || 'Failed to fetch installments')
+      return {
+        success: false,
+        message: error.message,
+        installments: [],
+      }
+    } finally {
+      commit('SET_LOADING', false)
+    }
+  },
 }
 
 const getters = {
@@ -592,6 +623,7 @@ const getters = {
   sale: (state) => state.sale,
   customerAccount: (state) => state.customerAccount,
   guarantors: (state) => state.guarantors,
+  installments: (state) => state.installments,
 }
 
 export default {
