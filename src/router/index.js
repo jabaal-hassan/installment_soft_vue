@@ -42,6 +42,12 @@ const routes = [
         meta: { requiresAuth: true, roles: ['admin', 'company admin'] },
       },
       {
+        path: '/dashboard/view-branches',
+        name: 'ViewBranch',
+        component: () => import('@/components/dashboard/Admin/BranchView.vue'),
+        meta: { requiresAuth: true, roles: ['admin', 'company admin'] },
+      },
+      {
         path: '/dashboard/add-inventory',
         name: 'AddInventory',
         component: () => import('@/components/dashboard/Admin/AddInventory.vue'),
